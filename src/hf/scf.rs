@@ -50,8 +50,11 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
     // TODO: do we need to pre-calculate all of the integrals? I don't think, for example, all ERI integrals are actually used.
     //  if we could skip some of them, that would be a huge performance gain.
     let overlap = calculate_overlap_matrix(&basis, &integrator);
+    println!("{:0.3}", overlap);
     let kinetic = calculate_kinetic_matrix(&basis, &integrator);
+    println!("{:0.3}", kinetic);
     let nuclear = calculate_nuclear_matrix(&basis, &input.molecule.atoms, &integrator);
+    println!("{:0.3}", nuclear);
     let electron = ElectronTensor::from_basis(&basis, &integrator);
 
     let core_hamiltonian = kinetic + nuclear;
@@ -93,7 +96,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
             (density_change.map_diagonal(|entry| entry.powi(2)).sum() / n_basis as f64).sqrt();
 
         log::info!(
-            "iteration {iteration} - electronic energy {electronic_energy}. density rms {density_rms}",
+            "iteration {iteration:<4} - electronic energy {electronic_energy:1.4}. density rms {density_rms:1.4e}",
         );
 
         if density_rms < input.epsilon {
@@ -129,10 +132,10 @@ fn calculate_overlap_matrix(
     basis: &[BasisFunction],
     integrator: &dyn Integrator<Function = BasisFunction>,
 ) -> DMatrix<f64> {
-    log::debug!("calculating overlap integrals");
-
     hermitian(basis.len(), |i, j| {
-        dbg!(integrator.overlap((&basis[i], &basis[j])))
+        let overlap_ij = integrator.overlap((&basis[i], &basis[j]));
+        log::trace!("overlap ({i}{j}) = {overlap_ij}");
+        overlap_ij
     })
 }
 
@@ -141,10 +144,10 @@ fn calculate_kinetic_matrix(
     basis: &[BasisFunction],
     integrator: &dyn Integrator<Function = BasisFunction>,
 ) -> DMatrix<f64> {
-    log::debug!("calculating kinetic energy integrals");
-
     hermitian(basis.len(), |i, j| {
-        dbg!(integrator.kinetic((&basis[i], &basis[j])))
+        let kinetic_ij = integrator.kinetic((&basis[i], &basis[j]));
+        log::trace!("kinetic ({i}{j}) = {kinetic_ij}");
+        kinetic_ij
     })
 }
 
@@ -154,10 +157,10 @@ fn calculate_nuclear_matrix(
     nuclei: &[Atom],
     integrator: &dyn Integrator<Function = BasisFunction>,
 ) -> DMatrix<f64> {
-    log::debug!("calculating electron-nuclear attraction energy integrals");
-
     hermitian(basis.len(), |i, j| {
-        dbg!(integrator.nuclear((&basis[i], &basis[j]), nuclei))
+        let nuclear_ij = integrator.nuclear((&basis[i], &basis[j]), nuclei);
+        log::trace!("nuclear ({i}{j}) = {nuclear_ij}");
+        nuclear_ij
     })
 }
 

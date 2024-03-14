@@ -18,8 +18,6 @@ impl Integrator for McMurchieDavidson {
     type Function = BasisFunction;
 
     fn overlap(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
-        log::trace!("calculating overlap between functions {functions:?}");
-
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -40,8 +38,6 @@ impl Integrator for McMurchieDavidson {
     }
 
     fn kinetic(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
-        log::trace!("calculating kinetic energy integral between functions {functions:?}");
-
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -62,8 +58,6 @@ impl Integrator for McMurchieDavidson {
     }
 
     fn nuclear(&self, functions: (&Self::Function, &Self::Function), nuclei: &[Atom]) -> f64 {
-        log::trace!("calculating nuclear-electron attraction energy integral between functions {functions:?}");
-        
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -103,8 +97,6 @@ impl Integrator for McMurchieDavidson {
             &Self::Function,
         ),
     ) -> f64 {
-        log::trace!("calculating electron-electron repulsion energy integral between functions {functions:?}");
-
         let (basis_a, basis_b, basis_c, basis_d) = functions;
         let diff_ab = basis_b.position - basis_a.position;
         let diff_cd = basis_d.position - basis_c.position;
@@ -164,20 +156,20 @@ impl Integrator for McMurchieDavidson {
 fn primitive_overlap(primitive_a: Gaussian, primitive_b: Gaussian, diff: Vector3<f64>) -> f64 {
     let Gaussian {
         exponent: exp_a,
-        angular: (i1, j1, k1),
+        angular: (l1, m1, n1),
         ..
     } = primitive_a;
 
     let Gaussian {
         exponent: exp_b,
-        angular: (i2, j2, k2),
+        angular: (l2, m2, n2),
         ..
     } = primitive_b;
 
-    hermite_expansion([i1, i2, 0], diff.x, exp_a, exp_b)
-        * hermite_expansion([j1, j2, 0], diff.y, exp_a, exp_b)
-        * hermite_expansion([k1, k2, 0], diff.z, exp_a, exp_b)
-        * (std::f64::consts::PI / (exp_a + exp_b)).powi(3).exp()
+    hermite_expansion([l1, l2, 0], diff.x, exp_a, exp_b)
+        * hermite_expansion([m1, m2, 0], diff.y, exp_a, exp_b)
+        * hermite_expansion([n1, n2, 0], diff.z, exp_a, exp_b)
+        * (std::f64::consts::PI / (exp_a + exp_b)).powi(3).sqrt()
 }
 
 fn primitive_kinetic(primitive_a: Gaussian, primitive_b: Gaussian, diff: Vector3<f64>) -> f64 {
@@ -236,7 +228,7 @@ fn primitive_nuclear(
 
         sum += e1 * e2 * e3 * coulomb_auxiliary(t, u, v, 0, p, diff_nucleus)
     }
-    -nucleus.ion_charge as f64 * std::f64::consts::PI / p * sum
+    -nucleus.charge() as f64 * std::f64::consts::PI / p * sum
 }
 
 fn primitive_electron(

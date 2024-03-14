@@ -90,11 +90,12 @@ impl ElectronTensor {
                 let index = IntegralIndex::new_unchecked((i, j, i, j));
                 let linear = index.linear(n_basis);
 
-                let _ =
-                    data[linear].get_or_insert_with(|| {
-                        dbg!(integrator
-                            .electron_repulsion((&basis[i], &basis[j], &basis[i], &basis[j])))
-                    });
+                let _ = data[linear].get_or_insert_with(|| {
+                    let eri_ijij =
+                        integrator.electron_repulsion((&basis[i], &basis[j], &basis[i], &basis[j]));
+                    log::trace!("diagonal electron repulsion ({i}{j}{i}{j}) = {eri_ijij}");
+                    eri_ijij
+                });
             })
         });
 
@@ -125,6 +126,8 @@ impl ElectronTensor {
                     } else {
                         0.0
                     };
+
+                    log::trace!("electron repulsion ({x}{y}{z}{w}) = {integral}");
 
                     data[linear] = Some(integral);
                 }

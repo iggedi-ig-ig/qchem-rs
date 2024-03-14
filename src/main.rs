@@ -4,7 +4,7 @@ use atom::Atom;
 use basis::BasisSet;
 use bse::BseBasisSet;
 use clap::{ArgAction, Parser, Subcommand};
-use hf::{hartree_fock, HartreeFockInput};
+use hf::{hartree_fock, HartreeFockInput, HartreeFockOutput};
 use molecule::{ConfigMolecule, Molecule};
 
 mod atom;
@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let molecule: ConfigMolecule = serde_json::from_reader(File::open(molecule)?)?;
 
             let basis_set: BasisSet = basis_set.try_into()?;
-            let molecule: Molecule = dbg!(molecule.into());
+            let molecule: Molecule = molecule.into();
 
             let hf_input = HartreeFockInput {
                 molecule: &molecule,
@@ -58,7 +58,16 @@ fn main() -> Result<(), Box<dyn Error>> {
             };
 
             let hf_output = hartree_fock(&hf_input);
-            println!("{:?}", hf_output);
+
+            if let Some(HartreeFockOutput {
+                orbital_energies, ..
+            }) = hf_output
+            {
+                println!("Hartree fock converged");
+                println!("orbital energies {orbital_energies:?}");
+            } else {
+                println!("Hartree fock didn't didn't converge")
+            }
         }
     }
 
