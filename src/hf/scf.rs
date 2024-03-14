@@ -92,7 +92,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
         let density_rms =
             (density_change.map_diagonal(|entry| entry.powi(2)).sum() / n_basis as f64).sqrt();
 
-        log::debug!(
+        log::info!(
             "iteration {iteration} - electronic energy {electronic_energy}. density rms {density_rms}",
         );
 
@@ -132,7 +132,7 @@ fn calculate_overlap_matrix(
     log::debug!("calculating overlap integrals");
 
     hermitian(basis.len(), |i, j| {
-        integrator.overlap((&basis[i], &basis[j]))
+        dbg!(integrator.overlap((&basis[i], &basis[j])))
     })
 }
 
@@ -144,7 +144,7 @@ fn calculate_kinetic_matrix(
     log::debug!("calculating kinetic energy integrals");
 
     hermitian(basis.len(), |i, j| {
-        integrator.kinetic((&basis[i], &basis[j]))
+        dbg!(integrator.kinetic((&basis[i], &basis[j])))
     })
 }
 
@@ -157,7 +157,7 @@ fn calculate_nuclear_matrix(
     log::debug!("calculating electron-nuclear attraction energy integrals");
 
     hermitian(basis.len(), |i, j| {
-        integrator.nuclear((&basis[i], &basis[j]), nuclei)
+        dbg!(integrator.nuclear((&basis[i], &basis[j]), nuclei))
     })
 }
 

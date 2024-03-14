@@ -14,7 +14,7 @@ use self::mo::MolecularOrbitals;
 pub(crate) struct HartreeFockInput<'a> {
     /// the molecule to run hartree fock for
     pub(crate) molecule: &'a Molecule,
-    /// what basis set to use 
+    /// what basis set to use
     pub(crate) basis_set: &'a BasisSet,
     /// the maximum number of iterations to try
     pub(crate) max_iterations: usize,

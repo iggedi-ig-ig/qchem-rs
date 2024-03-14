@@ -18,6 +18,8 @@ impl Integrator for McMurchieDavidson {
     type Function = BasisFunction;
 
     fn overlap(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
+        log::trace!("calculating overlap between functions {functions:?}");
+
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -38,6 +40,8 @@ impl Integrator for McMurchieDavidson {
     }
 
     fn kinetic(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
+        log::trace!("calculating kinetic energy integral between functions {functions:?}");
+
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -58,6 +62,8 @@ impl Integrator for McMurchieDavidson {
     }
 
     fn nuclear(&self, functions: (&Self::Function, &Self::Function), nuclei: &[Atom]) -> f64 {
+        log::trace!("calculating nuclear-electron attraction energy integral between functions {functions:?}");
+        
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -97,6 +103,8 @@ impl Integrator for McMurchieDavidson {
             &Self::Function,
         ),
     ) -> f64 {
+        log::trace!("calculating electron-electron repulsion energy integral between functions {functions:?}");
+
         let (basis_a, basis_b, basis_c, basis_d) = functions;
         let diff_ab = basis_b.position - basis_a.position;
         let diff_cd = basis_d.position - basis_c.position;

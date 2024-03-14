@@ -1,19 +1,15 @@
-use std::collections::HashMap;
+use std::{error::Error, fs::File, path::PathBuf};
 
 use atom::Atom;
-use basis::{BasisFunctionType, ContractedGaussian, Gaussian};
+use basis::BasisSet;
+use bse::BseBasisSet;
 use clap::{ArgAction, Parser, Subcommand};
-use nalgebra::Vector3;
-use smallvec::smallvec;
-
-use crate::{
-    basis::{AtomicBasis, BasisSet},
-    hf::HartreeFockInput,
-    molecule::Molecule,
-};
+use hf::{hartree_fock, HartreeFockInput};
+use molecule::{ConfigMolecule, Molecule};
 
 mod atom;
 mod basis;
+mod bse;
 mod hf;
 mod integrals;
 mod molecule;
@@ -31,52 +27,40 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum QcCommand {
-    HartreeFock {/* specify what to output */},
+    #[command(name = "hf")]
+    HartreeFock {
+        basis_set: PathBuf,
+        molecule: PathBuf,
+    },
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
 
-    // let args: Args = Args::parse();
+    let args: Args = Args::parse();
 
-    let test_molecule = Molecule::new(vec![
-        Atom {
-            position: Vector3::zeros(),
-            ordinal: 1,
-            ion_charge: 0,
-            mass: 1.0,
-        },
-        Atom {
-            position: Vector3::new(0.0, 0.0, 1.0),
-            ordinal: 1,
-            ion_charge: 0,
-            mass: 1.0,
-        },
-    ]);
+    match args.command {
+        QcCommand::HartreeFock {
+            basis_set,
+            molecule,
+        } => {
+            let basis_set: BseBasisSet = serde_json::from_reader(File::open(basis_set)?)?;
+            let molecule: ConfigMolecule = serde_json::from_reader(File::open(molecule)?)?;
 
-    let test_basis_set = BasisSet {
-        atomic_mapping: HashMap::from([(
-            1,
-            AtomicBasis {
-                basis_functions: vec![BasisFunctionType::ContractedGaussian(ContractedGaussian(
-                    smallvec![Gaussian {
-                        exponent: 1.0,
-                        coefficient: Gaussian::norm(1.0, (0, 0, 0)),
-                        angular: (0, 0, 0)
-                    }],
-                ))],
-            },
-        )]),
-    };
+            let basis_set: BasisSet = basis_set.try_into()?;
+            let molecule: Molecule = dbg!(molecule.into());
 
-    let test_input = HartreeFockInput {
-        molecule: &test_molecule,
-        basis_set: &test_basis_set,
-        max_iterations: 100,
-        epsilon: 1e-6,
-    };
+            let hf_input = HartreeFockInput {
+                molecule: &molecule,
+                basis_set: &basis_set,
+                max_iterations: 100,
+                epsilon: 1e-12,
+            };
 
-    let test_output = hf::hartree_fock(&test_input);
+            let hf_output = hartree_fock(&hf_input);
+            println!("{:?}", hf_output);
+        }
+    }
 
-    println!("{:?}", test_output.unwrap().orbital_energies);
+    Ok(())
 }

@@ -90,9 +90,11 @@ impl ElectronTensor {
                 let index = IntegralIndex::new_unchecked((i, j, i, j));
                 let linear = index.linear(n_basis);
 
-                let _ = data[linear].get_or_insert_with(|| {
-                    integrator.electron_repulsion((&basis[i], &basis[j], &basis[i], &basis[j]))
-                });
+                let _ =
+                    data[linear].get_or_insert_with(|| {
+                        dbg!(integrator
+                            .electron_repulsion((&basis[i], &basis[j], &basis[i], &basis[j])))
+                    });
             })
         });
 
