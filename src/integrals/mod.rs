@@ -2,10 +2,10 @@ use crate::Atom;
 pub(crate) use electron_tensor::ElectronTensor;
 
 mod electron_tensor;
-mod naive;
+mod mmd;
 
 /// The default integrator
-pub(crate) type DefaultIntegrator = naive::McMurchieDavidson;
+pub(crate) type DefaultIntegrator = mmd::McMurchieDavidson;
 
 pub(crate) trait Integrator {
     type Function;

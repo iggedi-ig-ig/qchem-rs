@@ -35,4 +35,6 @@ pub(crate) struct HartreeFockOutput {
     /// the orbital energies that were found in this hartree fock calculation, sorted in
     /// ascending order
     pub(crate) orbital_energies: Vec<f64>,
+    /// The electronic energy of the system
+    pub(crate) electronic_energy: f64,
 }

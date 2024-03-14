@@ -222,13 +222,13 @@ fn primitive_nuclear(
     for (t, u, v) in itertools::iproduct!(0..=l1 + l2, 0..=m1 + m2, 0..=n1 + n2) {
         // TODO: if this was a nested loop, e1 and e2 would not have to be calculated in the inner most branch
         //  which could potentially speed up computation significantly. It depends on what the compiler does.
+
         let e1 = hermite_expansion([l1, l2, t], diff.x, a, b);
         let e2 = hermite_expansion([m1, m2, u], diff.y, a, b);
-        let e3 = hermite_expansion([n1, n1, v], diff.z, a, b);
-
+        let e3 = hermite_expansion([n1, n2, v], diff.z, a, b);
         sum += e1 * e2 * e3 * coulomb_auxiliary(t, u, v, 0, p, diff_nucleus)
     }
-    -nucleus.charge() as f64 * std::f64::consts::PI / p * sum
+    (-nucleus.charge() as f64 * std::f64::consts::TAU / p) * sum
 }
 
 fn primitive_electron(
@@ -320,9 +320,53 @@ fn product_center(
 
 #[cfg(test)]
 mod tests {
+    use nalgebra::Vector3;
+
+    use crate::basis::Gaussian;
+
     #[test]
-    fn test_overlap() {
-        todo!("test overlap integral")
+    fn test_primitive_overlap() {
+        let trivial = Gaussian {
+            exponent: 1.0,
+            coefficient: 1.0,
+            angular: (0, 0, 0),
+        };
+        let angular_i = Gaussian {
+            exponent: 1.0,
+            coefficient: 1.0,
+            angular: (1, 0, 0),
+        };
+        let angular_j = Gaussian {
+            exponent: 1.0,
+            coefficient: 1.0,
+            angular: (0, 1, 0),
+        };
+        let angular_k = Gaussian {
+            exponent: 1.0,
+            coefficient: 1.0,
+            angular: (0, 0, 1),
+        };
+
+        assert_eq!(
+            super::primitive_overlap(trivial, trivial, Vector3::new(1.0, 0.0, 0.)),
+            1.194077663824459,
+            "trivial overlap (all parameters one) is incorrect"
+        );
+        assert_eq!(
+            super::primitive_overlap(angular_i, angular_i, Vector3::new(1.0, 0.0, 0.)),
+            0.0,
+            "overlap for two trivial p_x orbitals is wrong"
+        );
+        assert_eq!(
+            super::primitive_overlap(angular_j, angular_j, Vector3::new(1.0, 0.0, 0.)),
+            0.29851941595611475,
+            "overlap for two trivial p_y orbitals is wrong"
+        );
+        assert_eq!(
+            super::primitive_overlap(angular_k, angular_k, Vector3::new(1.0, 0.0, 0.)),
+            0.29851941595611475,
+            "overlap for two trivial p_z orbitals is wrong"
+        );
     }
 
     #[test]

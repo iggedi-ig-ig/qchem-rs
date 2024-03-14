@@ -42,7 +42,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
         .molecule
         .atoms
         .iter()
-        .map(|atom| atom.ordinal as i32 - atom.ion_charge)
+        .map(|atom| atom.ordinal as i32)
         .sum::<i32>() as usize;
 
     let _nuclear_repulsion = calculate_nuclear_repulsion(&input.molecule.atoms);
@@ -100,10 +100,13 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
         );
 
         if density_rms < input.epsilon {
+            let electronic_energy =
+                0.5 * (&density * (2.0 * &core_hamiltonian + &density_guess)).trace();
             return Some(HartreeFockOutput {
                 orbitals: MolecularOrbitals::from_coefficient_matrix(&coefficients),
                 basis,
                 orbital_energies: obrital_energies.as_slice().to_vec(),
+                electronic_energy,
             });
         }
     }

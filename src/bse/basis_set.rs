@@ -44,16 +44,20 @@ impl TryFrom<BseBasisSet> for BasisSet {
                             let exponent = exponent.parse::<f64>()?;
                             let coefficient = coefficient.parse::<f64>()?;
 
+                            let norm = Gaussian::norm(exponent, angular);
+
+                            println!("{angular:?} {exponent} {coefficient} {norm}");
+
                             primitives.push(Gaussian {
                                 exponent,
-                                coefficient: coefficient * Gaussian::norm(exponent, angular),
+                                coefficient: coefficient * norm,
                                 angular,
                             });
                         }
 
-                        basis_functions.push(BasisFunctionType::ContractedGaussian(
-                            ContractedGaussian(primitives),
-                        ))
+                        element_atomic_basis.basis_functions.push(
+                            BasisFunctionType::ContractedGaussian(ContractedGaussian(primitives)),
+                        );
                     }
                 }
 
