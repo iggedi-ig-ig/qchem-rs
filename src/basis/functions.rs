@@ -1,0 +1,56 @@
+use nalgebra::Vector3;
+use smallvec::SmallVec;
+
+/// Function of the form K*x^i*y^j*z^k*exp(-alpha*x^2)
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(crate) struct Gaussian {
+    pub(crate) exponent: f64,
+    /// The coefficient of this gaussian and optionally the normalization constant
+    pub(crate) coefficient: f64,
+    /// (i, j, k) exponents of polynomial terms
+    pub(crate) angular: (i32, i32, i32),
+}
+
+impl Gaussian {
+    pub(crate) fn norm(exponent: f64, angular: (i32, i32, i32)) -> f64 {
+        let (i, j, k) = angular;
+
+        (std::f64::consts::FRAC_2_PI * exponent)
+            .powi(3)
+            .sqrt()
+            .sqrt()
+            * f64::sqrt(
+                (8.0 * exponent).powi(i + j + k)
+                    / ((i + 1..=2 * i).product::<i32>()
+                        * (j + 1..=2 * j).product::<i32>()
+                        * (k + 1..=2 * k).product::<i32>()) as f64,
+            )
+    }
+}
+
+/// Linear combination of many [`Gaussian`]s
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct ContractedGaussian(pub(crate) SmallVec<[Gaussian; 6]>);
+
+/// The type a basis function can have.
+#[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
+pub(crate) enum BasisFunctionType {
+    /// A linear combination of many primitive gaussians
+    ContractedGaussian(ContractedGaussian),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct BasisFunction {
+    /// The type of basis function this basis function has
+    pub(crate) function_type: BasisFunctionType,
+    /// The position of this basis function, in natural units
+    pub(crate) position: Vector3<f64>,
+}
+
+impl BasisFunction {
+    /// Evaluate this basis function at a given position
+    pub(crate) fn evaluate(&self, _at: Vector3<f64>) -> f64 {
+        todo!("implement basis function evaluation")
+    }
+}

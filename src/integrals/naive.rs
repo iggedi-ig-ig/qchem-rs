@@ -11,12 +11,13 @@ use super::Integrator;
 /// # Reference:
 ///
 /// [1] Goings, J. Integrals. https://joshuagoings.com/2017/04/28/integrals/
-pub struct McMurchieDavidson;
+#[derive(Default)]
+pub(crate) struct McMurchieDavidson;
 
 impl Integrator for McMurchieDavidson {
     type Function = BasisFunction;
 
-    fn overlap(&mut self, functions: (&Self::Function, &Self::Function)) -> f64 {
+    fn overlap(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -36,7 +37,7 @@ impl Integrator for McMurchieDavidson {
         }
     }
 
-    fn kinetic(&mut self, functions: (&Self::Function, &Self::Function)) -> f64 {
+    fn kinetic(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -56,7 +57,7 @@ impl Integrator for McMurchieDavidson {
         }
     }
 
-    fn nuclear(&mut self, functions: (&Self::Function, &Self::Function), nuclei: &[Atom]) -> f64 {
+    fn nuclear(&self, functions: (&Self::Function, &Self::Function), nuclei: &[Atom]) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -88,7 +89,7 @@ impl Integrator for McMurchieDavidson {
     }
 
     fn electron_repulsion(
-        &mut self,
+        &self,
         functions: (
             &Self::Function,
             &Self::Function,
@@ -131,7 +132,6 @@ impl Integrator for McMurchieDavidson {
                     );
 
                     let diff_product = product_center_cd - product_center_ab;
-                    let dist_sq_product = diff_product.norm_squared();
 
                     output += primitive_a.coefficient
                         * primitive_b.coefficient
@@ -145,7 +145,6 @@ impl Integrator for McMurchieDavidson {
                             diff_ab,
                             diff_cd,
                             diff_product,
-                            dist_sq_product,
                         )
                 }
                 output
@@ -218,7 +217,6 @@ fn primitive_nuclear(
 
     let p = a + b;
     let diff_nucleus = nucleus.position - product_center;
-    let dist_sq_nucleus = diff_nucleus.norm_squared();
 
     let mut sum = 0.0;
     for (t, u, v) in itertools::iproduct!(0..=l1 + l2, 0..=m1 + m2, 0..=n1 + n2) {
@@ -228,7 +226,7 @@ fn primitive_nuclear(
         let e2 = hermite_expansion([m1, m2, u], diff.y, a, b);
         let e3 = hermite_expansion([n1, n1, v], diff.z, a, b);
 
-        sum += e1 * e2 * e3 * coulomb_auxiliary(t, u, v, 0, p, diff_nucleus, dist_sq_nucleus)
+        sum += e1 * e2 * e3 * coulomb_auxiliary(t, u, v, 0, p, diff_nucleus)
     }
     -nucleus.ion_charge as f64 * std::f64::consts::PI / p * sum
 }
@@ -241,7 +239,6 @@ fn primitive_electron(
     diff_ab: Vector3<f64>,
     diff_cd: Vector3<f64>,
     diff_product: Vector3<f64>,
-    dist_sq_product: f64,
 ) -> f64 {
     let Gaussian {
         exponent: a,
@@ -292,15 +289,7 @@ fn primitive_electron(
             * e4
             * e5
             * e6
-            * coulomb_auxiliary(
-                t1 + t2,
-                u1 + u2,
-                v1 + v2,
-                0,
-                alpha,
-                diff_product,
-                dist_sq_product,
-            )
+            * coulomb_auxiliary(t1 + t2, u1 + u2, v1 + v2, 0, alpha, diff_product)
             * if (t2 + u2 + v2) % 2 == 0 { 1.0 } else { -1.0 }
     }
 
