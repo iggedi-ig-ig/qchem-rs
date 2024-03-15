@@ -17,6 +17,7 @@ macro_rules! define_atoms {
             ),*
         }
 
+        #[allow(unused)]
         impl $enum_name {
             $vis fn from_ordinal(ordinal: usize) -> Option<Self> {
                 Some(match ordinal {

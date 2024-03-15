@@ -17,3 +17,6 @@ itertools = "0.12.1"
 nalgebra = "0.32.4"
 smallvec = "1.13.1"
 log = "0.4.21"
+
+[dev-dependencies]
+approx = "0.5.1"

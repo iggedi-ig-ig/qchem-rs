@@ -61,8 +61,6 @@ pub fn hermite_expansion([i, j, t]: [i32; 3], dist: f64, a: f64, b: f64) -> f64 
 /// * `p` - a `f64` representing the sum of the two exponents of the contracted GTOs.
 /// * `diff` - a `&Vector3<f64>` representing the difference vector between the center of the
 ///            contracted GTOs.
-/// * `dist_sq` - a `f64` representing the squared distance between the centers of the contracted
-///               GTOs.
 ///
 /// # Returns
 ///

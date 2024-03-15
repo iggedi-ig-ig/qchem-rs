@@ -318,6 +318,7 @@ dependencies = [
 name = "qchem"
 version = "0.1.0"
 dependencies = [
+ "approx",
  "boys",
  "clap",
  "itertools",

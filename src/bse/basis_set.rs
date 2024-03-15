@@ -46,8 +46,6 @@ impl TryFrom<BseBasisSet> for BasisSet {
 
                             let norm = Gaussian::norm(exponent, angular);
 
-                            println!("{angular:?} {exponent} {coefficient} {norm}");
-
                             primitives.push(Gaussian {
                                 exponent,
                                 coefficient: coefficient * norm,

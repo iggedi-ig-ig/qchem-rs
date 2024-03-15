@@ -25,10 +25,14 @@ impl From<ConfigMolecule> for Molecule {
         let mut atoms = Vec::with_capacity(config_atoms.len());
 
         for atom in config_atoms {
+            let &[x, y, z] = atom.position.as_slice() else {
+                // TODO: error handling
+                panic!("Atom didn't have x, y, z coordinates")
+            };
+
             atoms.push(Atom {
-                position: Vector3::from_column_slice(&atom.position),
+                position: Vector3::new(x, y, z),
                 ordinal: atom.element as usize,
-                ion_charge: 0,
             });
         }
 

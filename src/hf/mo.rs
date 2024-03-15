@@ -32,6 +32,7 @@ impl MolecularOrbitals {
         Self { orbitals }
     }
 
+    /// Evaluate the n-th lowest energy orbital at a given positon
     pub(crate) fn evaluate_orbital(
         &self,
         basis: &[BasisFunction],

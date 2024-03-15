@@ -59,14 +59,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let hf_output = hartree_fock(&hf_input);
 
-            if let Some(HartreeFockOutput {
-                orbital_energies, ..
-            }) = hf_output
-            {
-                println!("Hartree fock converged");
-                println!("orbital energies {orbital_energies:?}");
-            } else {
-                println!("Hartree fock didn't didn't converge")
+            match hf_output {
+                Some(
+                    ref output @ HartreeFockOutput {
+                        ref orbital_energies,
+                        electronic_energy,
+                        nuclear_repulsion,
+                        ..
+                    },
+                ) => {
+                    log::info!("hartree fock converged");
+                    log::info!("electronic energy: {electronic_energy:3.3}");
+                    log::info!("nuclear repulsion energy: {nuclear_repulsion:3.3}");
+                    log::info!("hartree fock energy: {:3.3}", output.total_energy());
+                    log::info!("orbital energies: {orbital_energies:3.3?}");
+                }
+                None => log::error!("hartree fock did not converge"),
             }
         }
     }

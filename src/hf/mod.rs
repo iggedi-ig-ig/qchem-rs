@@ -25,6 +25,7 @@ pub(crate) struct HartreeFockInput<'a> {
 
 /// The output of a hartree fock calculation
 #[derive(Debug)]
+#[non_exhaustive]
 pub(crate) struct HartreeFockOutput {
     /// The molecular orbitals that were found in the hartree fock calculation.
     /// These are sorted by ascending order in energy.
@@ -37,4 +38,12 @@ pub(crate) struct HartreeFockOutput {
     pub(crate) orbital_energies: Vec<f64>,
     /// The electronic energy of the system
     pub(crate) electronic_energy: f64,
+    /// The nuclear repulsion energy
+    pub(crate) nuclear_repulsion: f64,
+}
+
+impl HartreeFockOutput {
+    pub(crate) fn total_energy(&self) -> f64 {
+        self.electronic_energy + self.nuclear_repulsion
+    } 
 }
