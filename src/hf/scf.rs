@@ -86,9 +86,9 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
 
         let new_density = calculate_updated_density(&coefficients, n_basis, n_electrons);
 
-        // TODO: f-mixing
+        const F: f64 = 1.0;
         let density_change = new_density - &density;
-        density += &density_change;
+        density += &density_change * F;
 
         let electronic_energy =
             0.5 * (&density * (2.0 * &core_hamiltonian + &density_guess)).trace();
@@ -119,8 +119,6 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
 }
 
 fn calculate_nuclear_repulsion(atoms: &[Atom]) -> f64 {
-    log::debug!("calculating nuclear repulsion");
-
     let n_atoms = atoms.len();
 
     let mut potential = 0.0;

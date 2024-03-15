@@ -37,11 +37,11 @@ enum QcCommand {
         molecule: PathBuf,
         /// The maximum number of iterations the SCF loop should attempt before the
         /// system is considered to not diverge
-        #[arg(long, short, default_value_t = 100)]
+        #[arg(long, default_value_t = 100)]
         max_iterations: usize,
-        /// If the RMS of the density matrix drops below this, the system is considered
+        /// if the rms of the density matrix drops below this, the system is considered
         /// converged
-        #[arg(long, short, default_value_t = 1e-6)]
+        #[arg(long, default_value_t = 1e-6)]
         epsilon: f64,
     },
 }
