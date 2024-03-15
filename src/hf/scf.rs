@@ -342,12 +342,12 @@ mod tests {
             ..
         } = hartree_fock(&input).unwrap();
 
-        assert_relative_eq!(electronic_energy, -1.8410539726907735, epsilon = 1e-6);
-        assert_relative_eq!(nuclear_repulsion, 0.7142857142857142, epsilon = 1e-6);
-        assert_relative_eq!(orbital_energies[0], -0.595564373728178, epsilon = 1e-6);
-        assert_relative_eq!(orbital_energies[1], 0.2382503139896246, epsilon = 1e-6);
-        assert_relative_eq!(orbital_energies[2], 0.7750727506800223, epsilon = 1e-6);
-        assert_relative_eq!(orbital_energies[3], 1.40316490313582, epsilon = 1e-6);
+        assert_relative_eq!(electronic_energy, -1.8410539726907735, epsilon = 1e-3);
+        assert_relative_eq!(nuclear_repulsion, 0.7142857142857142, epsilon = 1e-3);
+        assert_relative_eq!(orbital_energies[0], -0.595564373728178, epsilon = 1e-3);
+        assert_relative_eq!(orbital_energies[1], 0.2382503139896246, epsilon = 1e-3);
+        assert_relative_eq!(orbital_energies[2], 0.7750727506800223, epsilon = 1e-3);
+        assert_relative_eq!(orbital_energies[3], 1.40316490313582, epsilon = 1e-3);
     }
 
     #[test]

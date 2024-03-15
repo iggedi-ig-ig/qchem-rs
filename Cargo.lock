@@ -3,6 +3,26 @@
 version = 3
 
 [[package]]
+name = "GSL"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9becaf6d7d1ba36a457288e661fa6a0472e8328629276f45369eafcd48ef1ce"
+dependencies = [
+ "GSL-sys",
+ "paste",
+]
+
+[[package]]
+name = "GSL-sys"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4577670dcc0720995dc39f04c438595eaae8ccc27f4aafd3e572dd408d01bd9d"
+dependencies = [
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -77,8 +97,10 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "boys"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f03c2832bc2772cae5748420bcea7af018dc38c4eab96bebc896f6e061d3a5b9"
 dependencies = [
- "quadrature",
+ "GSL",
 ]
 
 [[package]]
@@ -296,6 +318,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
+name = "pkg-config"
+version = "0.3.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
+
+[[package]]
 name = "pretty_env_logger"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -329,12 +357,6 @@ dependencies = [
  "serde_json",
  "smallvec",
 ]
-
-[[package]]
-name = "quadrature"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2054ccb02f454fcb2bc81e343aa0a171636a6331003fd5ec24c47a10966634b7"
 
 [[package]]
 name = "quote"

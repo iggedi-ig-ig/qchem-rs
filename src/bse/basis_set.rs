@@ -1,6 +1,5 @@
 use std::{collections::HashMap, error::Error};
 
-use itertools::iproduct;
 use serde::Deserialize;
 use smallvec::SmallVec;
 
@@ -76,7 +75,7 @@ impl TryFrom<BseBasisSet> for BasisSet {
 fn generate_angular_vectors(angular_magnitude: i32) -> Vec<(i32, i32, i32)> {
     let mut angular_vectors = Vec::with_capacity(8);
 
-    for (i, j, k) in iproduct!(
+    for (i, j, k) in itertools::iproduct!(
         0..=angular_magnitude,
         0..=angular_magnitude,
         0..=angular_magnitude
