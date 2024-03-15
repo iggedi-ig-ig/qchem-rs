@@ -95,6 +95,7 @@ struct ElectronicConfiguration {
 }
 
 #[derive(Deserialize)]
+#[allow(unused)]
 struct ElectronShell {
     function_type: String,
     angular_momentum: Vec<i32>,

@@ -109,6 +109,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
                 orbital_energies: obrital_energies.as_slice().to_vec(),
                 electronic_energy,
                 nuclear_repulsion,
+                iterations: iteration,
             });
         }
     }

@@ -1,3 +1,5 @@
+// TODO: implement slater determinants to actually work with the wave function.
+#![allow(unused)]
 use nalgebra::{DMatrix, Vector3};
 
 use crate::basis::BasisFunction;

@@ -40,10 +40,12 @@ pub(crate) struct HartreeFockOutput {
     pub(crate) electronic_energy: f64,
     /// The nuclear repulsion energy
     pub(crate) nuclear_repulsion: f64,
+    /// After how many iterations did the system converge
+    pub(crate) iterations: usize,
 }
 
 impl HartreeFockOutput {
     pub(crate) fn total_energy(&self) -> f64 {
         self.electronic_energy + self.nuclear_repulsion
-    } 
+    }
 }
