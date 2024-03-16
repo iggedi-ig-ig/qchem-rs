@@ -371,19 +371,4 @@ mod tests {
             "overlap for two trivial p_z orbitals is wrong"
         );
     }
-
-    #[test]
-    fn test_kinetic() {
-        todo!("test kinetic energy integral")
-    }
-
-    #[test]
-    fn test_nuclear() {
-        todo!("test nuclear attraction integral")
-    }
-
-    #[test]
-    fn test_electron() {
-        todo!("test electron repulsion integral")
-    }
 }

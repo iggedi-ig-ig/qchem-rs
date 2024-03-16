@@ -326,13 +326,18 @@ define_atoms! {
     }
 }
 
-#[test]
-fn test() {
-    let hydrogen: Result<ElementType, _> = serde_json::from_str(r#""1""#);
-    let helium: Result<ElementType, _> = serde_json::from_str(r#""2""#);
-    let uranium: Result<ElementType, _> = serde_json::from_str(r#""92""#);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    assert!(matches!(hydrogen, Ok(ElementType::H)));
-    assert!(matches!(helium, Ok(ElementType::He)));
-    assert!(matches!(uranium, Ok(ElementType::U)));
+    #[test]
+    fn test() {
+        let hydrogen: Result<ElementType, _> = serde_json::from_str(r#""1""#);
+        let helium: Result<ElementType, _> = serde_json::from_str(r#""2""#);
+        let uranium: Result<ElementType, _> = serde_json::from_str(r#""92""#);
+
+        assert!(matches!(hydrogen, Ok(ElementType::H)));
+        assert!(matches!(helium, Ok(ElementType::He)));
+        assert!(matches!(uranium, Ok(ElementType::U)));
+    }
 }
