@@ -6,7 +6,7 @@ use crate::{atom::Atom, molecule::Molecule, periodic_table::ElementType};
 /// Represents a full molecule in a config file.
 /// A molecule is just a list of positioned atoms.
 #[derive(Deserialize)]
-pub(crate) struct ConfigMolecule(Vec<ConfigAtom>);
+pub struct ConfigMolecule(Vec<ConfigAtom>);
 
 #[derive(Deserialize)]
 struct ConfigAtom {

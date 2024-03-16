@@ -1,5 +1,5 @@
 pub(crate) use functions::*;
-pub(crate) use set::*;
+pub use set::*;
 
 mod functions;
 mod set;

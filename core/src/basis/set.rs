@@ -5,7 +5,7 @@ use crate::{atom::Atom, periodic_table::ElementType};
 use super::BasisFunctionType;
 
 #[derive(Debug)]
-pub(crate) struct BasisSet {
+pub struct BasisSet {
     atomic_mapping: HashMap<ElementType, AtomicBasis>,
 }
 

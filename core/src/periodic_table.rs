@@ -86,7 +86,7 @@ macro_rules! define_atoms {
 
 define_atoms! {
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub(crate) enum ElementType {
+    pub enum ElementType {
         #[doc = "Hydrogen"]
         H = 1,
         #[doc = "Helium"]

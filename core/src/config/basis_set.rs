@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Deserialize)]
-pub(crate) struct ConfigBasisSet {
+pub struct ConfigBasisSet {
     elements: HashMap<ElementType, ConfigElectronicConfiguration>,
 }
 

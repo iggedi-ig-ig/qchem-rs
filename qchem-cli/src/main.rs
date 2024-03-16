@@ -1,18 +1,12 @@
+use core::{
+    basis::BasisSet,
+    config::{ConfigBasisSet, ConfigMolecule},
+    hf::{hartree_fock, HartreeFockInput, HartreeFockOutput},
+    molecule::Molecule,
+};
 use std::{error::Error, fs::File, path::PathBuf};
 
-use basis::BasisSet;
 use clap::{ArgAction, Parser, Subcommand};
-use config::{ConfigBasisSet, ConfigMolecule};
-use hf::{hartree_fock, HartreeFockInput, HartreeFockOutput};
-use molecule::Molecule;
-
-mod atom;
-mod basis;
-mod config;
-mod hf;
-mod integrals;
-mod molecule;
-mod periodic_table;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -77,8 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         electronic_energy,
                         nuclear_repulsion,
                         iterations,
-                        orbitals: ref _orbitals,
-                        basis: ref _basis,
+                        ..
                     },
                 ) => {
                     log::info!("hartree fock converged after {iterations} iterations");

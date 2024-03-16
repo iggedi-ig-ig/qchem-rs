@@ -1,27 +1,15 @@
-[package]
-name = "qchem"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["core", "qchem-cli"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [profile.dev]
 opt-level = 3
 
-[dependencies]
+[workspace.dependencies]
 serde = { version = "1.0.197", features = ["derive"] }
-clap = { version = "4.5.2", features = ["derive"] }
-pretty_env_logger = "0.5.0"
 serde_json = "1.0.114"
 itertools = "0.12.1"
 nalgebra = "0.32.4"
 smallvec = "1.13.1"
-boys = "0.1.0"
 log = "0.4.21"
-
-[dev-dependencies]
-criterion = "0.5.1"
-approx = "0.5.1"
-
-[[bench]]
-name = "integrals"
-harness = true
