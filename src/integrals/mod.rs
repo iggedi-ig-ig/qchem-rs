@@ -1,5 +1,6 @@
-use crate::Atom;
 pub(crate) use electron_tensor::ElectronTensor;
+
+use crate::atom::Atom;
 
 mod electron_tensor;
 mod mmd;

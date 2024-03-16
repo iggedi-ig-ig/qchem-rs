@@ -1,6 +1,5 @@
 use std::{error::Error, fs::File, path::PathBuf};
 
-use atom::Atom;
 use basis::BasisSet;
 use clap::{ArgAction, Parser, Subcommand};
 use config::{ConfigBasisSet, ConfigMolecule};

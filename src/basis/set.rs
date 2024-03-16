@@ -24,14 +24,29 @@ impl BasisSet {
 /// Represents the basis functions for a single atom.
 #[derive(Debug)]
 pub(crate) struct AtomicBasis {
-    // TODO: maybe split this up into different shells. This might allow
-    //  grouping same shell atoms for faster integration
-    pub(crate) basis_functions: Vec<BasisFunctionType>,
+    pub(crate) shells: Vec<ElectronShell>,
 }
 
 impl AtomicBasis {
     pub(crate) fn empty() -> Self {
+        Self { shells: Vec::new() }
+    }
+
+    pub(crate) fn basis_functions(&self) -> impl Iterator<Item = &BasisFunctionType> {
+        self.shells.iter().flat_map(|shell| &shell.basis_functions)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct ElectronShell {
+    pub(crate) angular_magnitude: i32,
+    pub(crate) basis_functions: Vec<BasisFunctionType>,
+}
+
+impl ElectronShell {
+    pub(crate) fn new(angular_magnitude: i32) -> Self {
         Self {
+            angular_magnitude,
             basis_functions: Vec::new(),
         }
     }

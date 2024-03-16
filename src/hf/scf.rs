@@ -27,8 +27,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
                 .unwrap_or_else(|| panic!("no basis for element {:?}", atom.element_type));
 
             atomic_basis
-                .basis_functions
-                .iter()
+                .basis_functions()
                 .map(|function_type| BasisFunction {
                     function_type: function_type.clone(),
                     position: atom.position,

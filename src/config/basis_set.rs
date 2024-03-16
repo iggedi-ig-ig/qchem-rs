@@ -4,13 +4,29 @@ use serde::Deserialize;
 use smallvec::SmallVec;
 
 use crate::{
-    basis::{AtomicBasis, BasisFunctionType, BasisSet, ContractedGaussian, Gaussian},
+    basis::{
+        AtomicBasis, BasisFunctionType, BasisSet, ContractedGaussian, ElectronShell, Gaussian,
+    },
     periodic_table::ElementType,
 };
 
 #[derive(Deserialize)]
 pub(crate) struct ConfigBasisSet {
-    elements: HashMap<ElementType, ElectronicConfiguration>,
+    elements: HashMap<ElementType, ConfigElectronicConfiguration>,
+}
+
+#[derive(Deserialize)]
+struct ConfigElectronicConfiguration {
+    electron_shells: Vec<ConfigElectronShell>,
+}
+
+#[derive(Deserialize)]
+#[allow(unused)]
+struct ConfigElectronShell {
+    function_type: String,
+    angular_momentum: Vec<i32>,
+    exponents: Vec<String>,
+    coefficients: Vec<Vec<String>>,
 }
 
 impl TryFrom<ConfigBasisSet> for BasisSet {
@@ -25,11 +41,10 @@ impl TryFrom<ConfigBasisSet> for BasisSet {
             let mut element_atomic_basis = AtomicBasis::empty();
 
             for electron_shell in &configuration.electron_shells {
-                let mut basis_functions = Vec::with_capacity(8);
-
                 for (index, &angular_magnitude) in
                     electron_shell.angular_momentum.iter().enumerate()
                 {
+                    let mut shell = ElectronShell::new(angular_magnitude);
                     let angular_vectors = generate_angular_vectors(angular_magnitude);
 
                     for angular in angular_vectors {
@@ -53,16 +68,15 @@ impl TryFrom<ConfigBasisSet> for BasisSet {
                             });
                         }
 
-                        element_atomic_basis.basis_functions.push(
-                            BasisFunctionType::ContractedGaussian(ContractedGaussian(primitives)),
-                        );
+                        shell
+                            .basis_functions
+                            .push(BasisFunctionType::ContractedGaussian(ContractedGaussian(
+                                primitives,
+                            )));
                     }
-                }
 
-                // TODO: group by angular term / shell
-                element_atomic_basis
-                    .basis_functions
-                    .append(&mut basis_functions);
+                    element_atomic_basis.shells.push(shell);
+                }
             }
 
             atomic_mapping.insert(element, element_atomic_basis);
@@ -87,18 +101,4 @@ fn generate_angular_vectors(angular_magnitude: i32) -> Vec<(i32, i32, i32)> {
     }
 
     angular_vectors
-}
-
-#[derive(Deserialize)]
-struct ElectronicConfiguration {
-    electron_shells: Vec<ElectronShell>,
-}
-
-#[derive(Deserialize)]
-#[allow(unused)]
-struct ElectronShell {
-    function_type: String,
-    angular_momentum: Vec<i32>,
-    exponents: Vec<String>,
-    coefficients: Vec<Vec<String>>,
 }
