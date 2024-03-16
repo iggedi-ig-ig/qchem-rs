@@ -3,6 +3,7 @@ pub(crate) use electron_tensor::ElectronTensor;
 
 mod electron_tensor;
 mod mmd;
+mod utils;
 
 /// The default integrator
 pub(crate) type DefaultIntegrator = mmd::McMurchieDavidson;

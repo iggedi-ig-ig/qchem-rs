@@ -3,20 +3,21 @@ use std::{collections::HashMap, error::Error};
 use serde::Deserialize;
 use smallvec::SmallVec;
 
-use crate::basis::{AtomicBasis, BasisFunctionType, BasisSet, ContractedGaussian, Gaussian};
-
-use super::atomic_table::ElementType;
+use crate::{
+    basis::{AtomicBasis, BasisFunctionType, BasisSet, ContractedGaussian, Gaussian},
+    periodic_table::ElementType,
+};
 
 #[derive(Deserialize)]
-pub(crate) struct BseBasisSet {
+pub(crate) struct ConfigBasisSet {
     elements: HashMap<ElementType, ElectronicConfiguration>,
 }
 
-impl TryFrom<BseBasisSet> for BasisSet {
+impl TryFrom<ConfigBasisSet> for BasisSet {
     // TODO: use a "better" type for error
     type Error = Box<dyn Error>;
 
-    fn try_from(value: BseBasisSet) -> Result<Self, Self::Error> {
+    fn try_from(value: ConfigBasisSet) -> Result<Self, Self::Error> {
         let mut atomic_mapping = HashMap::with_capacity(value.elements.len());
 
         // TODO: this is pretty deeply nested, this can definitely be improved somehow

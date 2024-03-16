@@ -2,18 +2,18 @@ use std::{error::Error, fs::File, path::PathBuf};
 
 use atom::Atom;
 use basis::BasisSet;
-use bse::BseBasisSet;
 use clap::{ArgAction, Parser, Subcommand};
+use config::{ConfigBasisSet, ConfigMolecule};
 use hf::{hartree_fock, HartreeFockInput, HartreeFockOutput};
-use molecule::{ConfigMolecule, Molecule};
+use molecule::Molecule;
 
 mod atom;
 mod basis;
-mod bse;
+mod config;
 mod hf;
 mod integrals;
 mod molecule;
-mod utils;
+mod periodic_table;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             max_iterations,
             epsilon,
         } => {
-            let basis_set: BseBasisSet = serde_json::from_reader(File::open(basis_set)?)?;
+            let basis_set: ConfigBasisSet = serde_json::from_reader(File::open(basis_set)?)?;
             let molecule: ConfigMolecule = serde_json::from_reader(File::open(molecule)?)?;
 
             let basis_set: BasisSet = basis_set.try_into()?;

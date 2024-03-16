@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{atom::Atom, bse::ElementType};
+use crate::{atom::Atom, periodic_table::ElementType};
 
 use super::BasisFunctionType;
 
@@ -12,8 +12,7 @@ pub(crate) struct BasisSet {
 impl BasisSet {
     /// Returns the basis of a given atom, if it exists.
     pub(crate) fn for_atom(&self, atom: &Atom) -> Option<&AtomicBasis> {
-        self.atomic_mapping
-            .get(&ElementType::from_ordinal(atom.ordinal)?)
+        self.atomic_mapping.get(&atom.element_type)
     }
 
     /// Create a new basis set given mappings from element type to the basis of that element

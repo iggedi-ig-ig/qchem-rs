@@ -1,16 +1,19 @@
+//! McMurchie Davidon integration scheme.
+//! Reference:
+//!
+//! [1] Goings, J. Integrals. https://joshuagoings.com/2017/04/28/integrals/
 use nalgebra::Vector3;
 
 use crate::{
     atom::Atom,
     basis::{BasisFunction, BasisFunctionType, ContractedGaussian, Gaussian},
-    utils::{coulomb_auxiliary, hermite_expansion},
 };
 
-use super::Integrator;
+use super::{
+    utils::{coulomb_auxiliary, hermite_expansion},
+    Integrator,
+};
 
-/// # Reference:
-///
-/// [1] Goings, J. Integrals. https://joshuagoings.com/2017/04/28/integrals/
 #[derive(Default)]
 pub(crate) struct McMurchieDavidson;
 

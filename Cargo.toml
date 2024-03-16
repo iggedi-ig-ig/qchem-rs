@@ -19,4 +19,9 @@ boys = "0.1.0"
 log = "0.4.21"
 
 [dev-dependencies]
+criterion = "0.5.1"
 approx = "0.5.1"
+
+[[bench]]
+name = "integrals"
+harness = true

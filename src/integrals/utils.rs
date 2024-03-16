@@ -30,7 +30,7 @@ use nalgebra::Vector3;
 #[allow(clippy::many_single_char_names)]
 // TODO: make this iterative
 // see https://joshuagoings.com/2017/04/28/integrals/
-pub(crate) fn hermite_expansion([i, j, t]: [i32; 3], dist: f64, a: f64, b: f64) -> f64 {
+pub(super) fn hermite_expansion([i, j, t]: [i32; 3], dist: f64, a: f64, b: f64) -> f64 {
     let p = a + b;
     let q = a * b / p;
 
@@ -68,7 +68,7 @@ pub(crate) fn hermite_expansion([i, j, t]: [i32; 3], dist: f64, a: f64, b: f64) 
 #[allow(clippy::many_single_char_names)]
 // TODO: make this iterative
 // see https://joshuagoings.com/2017/04/28/integrals/
-pub(crate) fn coulomb_auxiliary(t: i32, u: i32, v: i32, n: i32, p: f64, diff: Vector3<f64>) -> f64 {
+pub(super) fn coulomb_auxiliary(t: i32, u: i32, v: i32, n: i32, p: f64, diff: Vector3<f64>) -> f64 {
     if t == u && u == v && v == 0 {
         (-2.0 * p).powi(n) * boys::micb25::boys(n as u64, p * diff.norm_squared())
     } else if t == u && u == 0 {

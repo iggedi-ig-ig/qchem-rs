@@ -24,7 +24,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
             let atomic_basis = input
                 .basis_set
                 .for_atom(atom)
-                .unwrap_or_else(|| panic!("no basis for atom with ordinal {}", atom.ordinal));
+                .unwrap_or_else(|| panic!("no basis for element {:?}", atom.element_type));
 
             atomic_basis
                 .basis_functions
@@ -42,7 +42,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
         .molecule
         .atoms
         .iter()
-        .map(|atom| atom.ordinal as i32)
+        .map(|atom| atom.charge())
         .sum::<i32>() as usize;
 
     let nuclear_repulsion = calculate_nuclear_repulsion(&input.molecule.atoms);
@@ -298,7 +298,7 @@ mod tests {
 
     use crate::{
         basis::BasisSet,
-        bse::BseBasisSet,
+        config::ConfigBasisSet,
         hf::{hartree_fock, HartreeFockInput, HartreeFockOutput},
     };
 
@@ -310,7 +310,7 @@ mod tests {
                 atoms: vec![
                     $($crate::atom::Atom {
                         position: ::nalgebra::Vector3::new($x, $y, $z),
-                        ordinal: $crate::bse::ElementType::$element as usize,
+                        element_type: $crate::periodic_table::ElementType::$element,
                     }),*
                 ]
             }
@@ -325,7 +325,7 @@ mod tests {
             H => (0.0, 0.0, 0.0),
             H => (0.0, 0.0, 1.4)
         };
-        let basis_set: BseBasisSet = serde_json::from_str(B_6_31G).unwrap();
+        let basis_set: ConfigBasisSet = serde_json::from_str(B_6_31G).unwrap();
         let basis_set = BasisSet::try_from(basis_set).unwrap();
 
         let input = HartreeFockInput {
@@ -360,7 +360,7 @@ mod tests {
             H => (0.0, -0.75, 0.585)
         };
 
-        let basis_set: BseBasisSet = serde_json::from_str(B_6_31G).unwrap();
+        let basis_set: ConfigBasisSet = serde_json::from_str(B_6_31G).unwrap();
         let basis_set = BasisSet::try_from(basis_set).unwrap();
 
         let input = HartreeFockInput {
@@ -411,7 +411,7 @@ mod tests {
             H => (1.3390, -0.9281, -0.5621)
         };
 
-        let basis_set: BseBasisSet = serde_json::from_str(B_STO_3G).unwrap();
+        let basis_set: ConfigBasisSet = serde_json::from_str(B_STO_3G).unwrap();
         let basis_set = BasisSet::try_from(basis_set).unwrap();
 
         let input = HartreeFockInput {
@@ -458,7 +458,7 @@ mod tests {
             Cl => (1.9880, 0.0000, 0.0000)
         };
 
-        let basis_set: BseBasisSet = serde_json::from_str(B_6_31G).unwrap();
+        let basis_set: ConfigBasisSet = serde_json::from_str(B_6_31G).unwrap();
         let basis_set = BasisSet::try_from(basis_set).unwrap();
 
         let input = HartreeFockInput {

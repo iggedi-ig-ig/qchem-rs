@@ -63,7 +63,6 @@ macro_rules! define_atoms {
             }
         }
 
-
         impl serde::Serialize for $enum_name {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
