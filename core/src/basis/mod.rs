@@ -1,4 +1,4 @@
-pub(crate) use functions::*;
+pub use functions::*;
 pub use set::*;
 
 mod functions;

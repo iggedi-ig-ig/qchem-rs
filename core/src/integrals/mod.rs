@@ -9,7 +9,7 @@ mod utils;
 /// The default integrator
 pub(crate) type DefaultIntegrator = mmd::McMurchieDavidson;
 
-pub(crate) trait Integrator {
+pub trait Integrator {
     type Function;
 
     /// Calculate the overlap integral between two basis functions.

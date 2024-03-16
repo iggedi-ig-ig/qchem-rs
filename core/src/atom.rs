@@ -4,7 +4,7 @@ use crate::periodic_table::ElementType;
 
 /// Represents an atom in a molecule.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) struct Atom {
+pub struct Atom {
     pub(crate) position: Vector3<f64>,
     pub(crate) element_type: ElementType,
     // TODO: ionic charge? Or do we only store that as a molecule property?

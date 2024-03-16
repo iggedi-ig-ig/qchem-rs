@@ -3,16 +3,16 @@ use smallvec::SmallVec;
 
 /// Function of the form K*x^i*y^j*z^k*exp(-alpha*x^2)
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) struct Gaussian {
-    pub(crate) exponent: f64,
+pub struct Gaussian {
+    pub exponent: f64,
     /// The coefficient of this gaussian and optionally the normalization constant
-    pub(crate) coefficient: f64,
+    pub coefficient: f64,
     /// (i, j, k) exponents of polynomial terms
-    pub(crate) angular: (i32, i32, i32),
+    pub angular: (i32, i32, i32),
 }
 
 impl Gaussian {
-    pub(crate) fn norm(exponent: f64, angular: (i32, i32, i32)) -> f64 {
+    pub fn norm(exponent: f64, angular: (i32, i32, i32)) -> f64 {
         let (i, j, k) = angular;
 
         (std::f64::consts::FRAC_2_PI * exponent)
@@ -30,22 +30,22 @@ impl Gaussian {
 
 /// Linear combination of many [`Gaussian`]s
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct ContractedGaussian(pub(crate) SmallVec<[Gaussian; 6]>);
+pub struct ContractedGaussian(pub SmallVec<[Gaussian; 6]>);
 
 /// The type a basis function can have.
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
-pub(crate) enum BasisFunctionType {
+pub enum BasisFunctionType {
     /// A linear combination of many primitive gaussians
     ContractedGaussian(ContractedGaussian),
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct BasisFunction {
+pub struct BasisFunction {
     /// The type of basis function this basis function has
-    pub(crate) function_type: BasisFunctionType,
+    pub function_type: BasisFunctionType,
     /// The position of this basis function, in natural units
-    pub(crate) position: Vector3<f64>,
+    pub position: Vector3<f64>,
 }
 
 impl BasisFunction {

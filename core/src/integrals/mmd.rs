@@ -15,7 +15,7 @@ use super::{
 };
 
 #[derive(Default)]
-pub(crate) struct McMurchieDavidson;
+pub struct McMurchieDavidson;
 
 impl Integrator for McMurchieDavidson {
     type Function = BasisFunction;

@@ -1,6 +1,8 @@
 mod mo;
 mod scf;
 
+use std::ops::Deref;
+
 pub use scf::hartree_fock;
 
 use crate::{
