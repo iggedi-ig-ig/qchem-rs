@@ -117,39 +117,44 @@ impl Integrator for McMurchieDavidson {
                 BasisFunctionType::ContractedGaussian(ContractedGaussian(data_d)),
             ) => {
                 let mut output = 0.0;
-                for (&primitive_a, &primitive_b, &primitive_c, &primitive_d) in
-                    itertools::iproduct!(data_a, data_b, data_c, data_d)
-                {
-                    let product_center_ab = product_center(
-                        basis_a.position,
-                        primitive_a.exponent,
-                        basis_b.position,
-                        primitive_b.exponent,
-                    );
+                for &primitive_a in data_a {
+                    for &primitive_b in data_b {
+                        for &primitive_c in data_c {
+                            for &primitive_d in data_d {
+                                let product_center_ab = product_center(
+                                    basis_a.position,
+                                    primitive_a.exponent,
+                                    basis_b.position,
+                                    primitive_b.exponent,
+                                );
 
-                    let product_center_cd = product_center(
-                        basis_c.position,
-                        primitive_c.exponent,
-                        basis_d.position,
-                        primitive_d.exponent,
-                    );
+                                let product_center_cd = product_center(
+                                    basis_c.position,
+                                    primitive_c.exponent,
+                                    basis_d.position,
+                                    primitive_d.exponent,
+                                );
 
-                    let diff_product = product_center_cd - product_center_ab;
+                                let diff_product = product_center_cd - product_center_ab;
 
-                    output += primitive_a.coefficient
-                        * primitive_b.coefficient
-                        * primitive_c.coefficient
-                        * primitive_d.coefficient
-                        * primitive_electron(
-                            primitive_a,
-                            primitive_b,
-                            primitive_c,
-                            primitive_d,
-                            diff_ab,
-                            diff_cd,
-                            diff_product,
-                        )
+                                output += primitive_a.coefficient
+                                    * primitive_b.coefficient
+                                    * primitive_c.coefficient
+                                    * primitive_d.coefficient
+                                    * primitive_electron(
+                                        primitive_a,
+                                        primitive_b,
+                                        primitive_c,
+                                        primitive_d,
+                                        diff_ab,
+                                        diff_cd,
+                                        diff_product,
+                                    )
+                            }
+                        }
+                    }
                 }
+
                 output
             }
         }
@@ -269,31 +274,40 @@ fn primitive_electron(
     let alpha = p * q / (p + q);
 
     let mut sum = 0.0;
-    for (t1, u1, v1, t2, u2, v2) in itertools::iproduct!(
-        0..=l1 + l2,
-        0..=m1 + m2,
-        0..=n1 + n2,
-        0..=l3 + l4,
-        0..=m3 + m4,
-        0..=n3 + n4
-    ) {
-        // TODO: these don't have to be calculated in the inner-most loop of the nested loops (which iproduct expands to).
-        // this could potentially speed up computation significantly, but the compiler might optimize already.
-        let e1 = hermite_expansion([l1, l2, t1], diff_ab.x, a, b);
-        let e2 = hermite_expansion([m1, m2, u1], diff_ab.y, a, b);
-        let e3 = hermite_expansion([n1, n2, v1], diff_ab.z, a, b);
-        let e4 = hermite_expansion([l3, l4, t2], diff_cd.x, c, d);
-        let e5 = hermite_expansion([m3, m4, u2], diff_cd.y, c, d);
-        let e6 = hermite_expansion([n3, n4, v2], diff_cd.z, c, d);
+    for t1 in 0..=l1 + l2 {
+        for u1 in 0..=m1 + m2 {
+            for v1 in 0..=n1 + n2 {
+                for t2 in 0..=l3 + l4 {
+                    for u2 in 0..=m3 + m4 {
+                        for v2 in 0..=n3 + n4 {
+                            let e1 = hermite_expansion([l1, l2, t1], diff_ab.x, a, b);
+                            let e2 = hermite_expansion([m1, m2, u1], diff_ab.y, a, b);
+                            let e3 = hermite_expansion([n1, n2, v1], diff_ab.z, a, b);
+                            let e4 = hermite_expansion([l3, l4, t2], diff_cd.x, c, d);
+                            let e5 = hermite_expansion([m3, m4, u2], diff_cd.y, c, d);
+                            let e6 = hermite_expansion([n3, n4, v2], diff_cd.z, c, d);
 
-        sum += e1
-            * e2
-            * e3
-            * e4
-            * e5
-            * e6
-            * coulomb_auxiliary(t1 + t2, u1 + u2, v1 + v2, 0, alpha, diff_product)
-            * if (t2 + u2 + v2) % 2 == 0 { 1.0 } else { -1.0 } // (-1)^(t2 + u2 + v2)
+                            sum += e1
+                                * e2
+                                * e3
+                                * e4
+                                * e5
+                                * e6
+                                * coulomb_auxiliary(
+                                    t1 + t2,
+                                    u1 + u2,
+                                    v1 + v2,
+                                    0,
+                                    alpha,
+                                    diff_product,
+                                )
+                                * if (t2 + u2 + v2) % 2 == 0 { 1.0 } else { -1.0 }
+                            // (-1)^(t2 + u2 + v2)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     2.0 * std::f64::consts::PI.powi(5).sqrt() * (p * q * (p + q).sqrt()).recip() * sum

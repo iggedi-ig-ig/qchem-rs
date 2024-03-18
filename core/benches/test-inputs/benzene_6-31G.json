@@ -1,4 +1,5 @@
 {
+    "name": "benzene 6-31G",
     "basis_functions": [
         {
             "function_type": {

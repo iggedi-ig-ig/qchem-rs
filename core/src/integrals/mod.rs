@@ -2,7 +2,7 @@ pub(crate) use electron_tensor::ElectronTensor;
 
 use crate::atom::Atom;
 
-mod electron_tensor;
+pub mod electron_tensor;
 pub mod mmd;
 mod utils;
 

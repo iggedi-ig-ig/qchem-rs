@@ -1,7 +1,6 @@
 use core::{
-    basis::BasisFunction,
     hf::scf,
-    integrals::{mmd, Integrator},
+    integrals::{electron_tensor::ElectronTensor, mmd::McMurchieDavidson},
     testing::TestInstance,
 };
 use std::error::Error;
@@ -17,10 +16,45 @@ macro_rules! test {
     }};
 }
 
-fn bench_kinetic(
-    c: &mut Criterion,
-    integrator: &impl Integrator<Function = BasisFunction>,
-) -> Result<(), Box<dyn Error>> {
+const INTEGRATOR: McMurchieDavidson = McMurchieDavidson;
+
+fn bench_overlap(c: &mut Criterion, instances: &[&TestInstance]) -> Result<(), Box<dyn Error>> {
+    for instance in instances {
+        let basis_functions = instance.basis_functions();
+
+        c.bench_function(&format!("Overlap {}", instance.name), move |b| {
+            b.iter(move || scf::compute_overlap_matrix(basis_functions, &INTEGRATOR))
+        });
+    }
+
+    Ok(())
+}
+
+fn bench_kinetic(c: &mut Criterion, instances: &[&TestInstance]) -> Result<(), Box<dyn Error>> {
+    for instance in instances {
+        let basis_functions = instance.basis_functions();
+
+        c.bench_function(&format!("Kinetic {}", instance.name), move |b| {
+            b.iter(move || scf::compute_kinetic_matrix(basis_functions, &INTEGRATOR))
+        });
+    }
+
+    Ok(())
+}
+
+fn bench_electron(c: &mut Criterion, instances: &[&TestInstance]) -> Result<(), Box<dyn Error>> {
+    for instance in instances {
+        let basis_functions = instance.basis_functions();
+
+        c.bench_function(&format!("Electron Repulsion {}", instance.name), move |b| {
+            b.iter(move || ElectronTensor::from_basis(basis_functions, &INTEGRATOR))
+        });
+    }
+
+    Ok(())
+}
+
+fn bench_integrals(c: &mut Criterion) -> Result<(), Box<dyn Error>> {
     let hydrogen_sto3g = test!("hydrogen", "STO-3G");
     let hydrogen_631g = test!("hydrogen", "6-31G");
 
@@ -28,29 +62,42 @@ fn bench_kinetic(
     let water_631g = test!("water", "6-31G");
 
     let benzene_sto3g = test!("benzene", "STO-3G");
-    let benzene_631g = test!("benzene", "6-31G");
+    // let benzene_631g = test!("benzene", "6-31G");
 
-    let mut bench_instance = move |name: &str, instance: &TestInstance| {
-        let basis_functions = instance.basis_functions();
+    // bench_overlap(
+    //     c,
+    //     &[
+    //         &hydrogen_sto3g,
+    //         &hydrogen_631g,
+    //         &water_sto3g,
+    //         &water_631g,
+    //         &benzene_sto3g,
+    //         &benzene_631g,
+    //     ],
+    // )
+    // .unwrap();
 
-        c.bench_function(name, move |b| {
-            b.iter(move || scf::compute_kinetic_matrix(basis_functions, integrator))
-        });
-    };
-    bench_instance("Hydrogen STO-3G", &hydrogen_sto3g);
-    bench_instance("Hydrogen 6-31G", &hydrogen_631g);
+    // bench_kinetic(
+    //     c,
+    //     &[
+    //         &hydrogen_sto3g,
+    //         &hydrogen_631g,
+    //         &water_sto3g,
+    //         &water_631g,
+    //         &benzene_sto3g,
+    //         &benzene_631g,
+    //     ],
+    // )
+    // .unwrap();
 
-    bench_instance("Water STO-3G", &water_sto3g);
-    bench_instance("Water 6-31G", &water_631g);
-
-    bench_instance("Benzene STO-3G", &benzene_sto3g);
-    bench_instance("Benzene 6-31G", &benzene_631g);
+    // TODO: once it's faster, add benzene to electron benchese
+    bench_electron(
+        c,
+        &[&hydrogen_sto3g, &hydrogen_631g, &water_sto3g, &water_631g],
+    )
+    .unwrap();
 
     Ok(())
-}
-
-fn bench_integrals(c: &mut Criterion) {
-    bench_kinetic(c, &mmd::McMurchieDavidson::default()).unwrap();
 }
 
 criterion_group!(benches, bench_integrals);

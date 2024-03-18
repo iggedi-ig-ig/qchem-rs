@@ -54,7 +54,7 @@ impl IntegralIndex {
 
 /// An electron tensor representing electron-electron repulsion integrals between
 /// four contracted Gaussian functions in a given basis set.
-pub(crate) struct ElectronTensor {
+pub struct ElectronTensor {
     data: Vec<f64>,
     /// side length
     size: usize,

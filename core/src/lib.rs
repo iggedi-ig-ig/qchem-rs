@@ -18,11 +18,12 @@ pub mod testing {
 
     #[derive(Serialize, Deserialize)]
     pub struct TestInstance {
+        pub name: String,
         basis_functions: Vec<BasisFunction>,
     }
 
     impl TestInstance {
-        pub fn new(basis_set: &BasisSet, molecule: &Molecule) -> Self {
+        pub fn new(name: String, basis_set: &BasisSet, molecule: &Molecule) -> Self {
             let mut basis_functions = Vec::new();
 
             for atom in molecule.atoms() {
@@ -36,12 +37,19 @@ pub mod testing {
                 }))
             }
 
-            Self { basis_functions }
+            Self {
+                name,
+                basis_functions,
+            }
         }
 
         pub fn save(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
             Ok(serde_json::to_writer(
-                File::options().create(true).write(true).open(path)?,
+                File::options()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(path)?,
                 self,
             )?)
         }

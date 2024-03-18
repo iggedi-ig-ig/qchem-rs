@@ -29,7 +29,12 @@ impl TestCaseGenerator {
             serde_json::from_reader(File::open(format!("../data/mol/{molecule}.json"))?)?;
         let mol: Molecule = mol.into();
 
-        TestInstance::new(&self.basis_set, &mol).save(format!(
+        TestInstance::new(
+            format!("{molecule} {}", self.basis_set_name),
+            &self.basis_set,
+            &mol,
+        )
+        .save(format!(
             "benches/test-inputs/{molecule}_{}.json",
             self.basis_set_name
         ))?;
