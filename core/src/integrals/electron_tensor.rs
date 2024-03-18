@@ -77,7 +77,7 @@ impl ElectronTensor {
     /// computed for each unique combination of four Gaussian functions in the given basis set.
     pub fn from_basis(
         basis: &[BasisFunction],
-        integrator: &impl Integrator<Function = BasisFunction>,
+        integrator: &impl Integrator<Item = BasisFunction>,
     ) -> Self {
         // Initialize variables for computing the total number of integrals and a thread-safe
         // container for storing the resulting electron-electron repulsion integrals.

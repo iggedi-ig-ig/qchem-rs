@@ -18,9 +18,9 @@ use super::{
 pub struct McMurchieDavidson;
 
 impl Integrator for McMurchieDavidson {
-    type Function = BasisFunction;
+    type Item = BasisFunction;
 
-    fn overlap(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
+    fn overlap(&self, functions: (&Self::Item, &Self::Item)) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -40,7 +40,7 @@ impl Integrator for McMurchieDavidson {
         }
     }
 
-    fn kinetic(&self, functions: (&Self::Function, &Self::Function)) -> f64 {
+    fn kinetic(&self, functions: (&Self::Item, &Self::Item)) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -60,7 +60,7 @@ impl Integrator for McMurchieDavidson {
         }
     }
 
-    fn nuclear(&self, functions: (&Self::Function, &Self::Function), nuclei: &[Atom]) -> f64 {
+    fn nuclear(&self, functions: (&Self::Item, &Self::Item), nuclei: &[Atom]) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
@@ -94,10 +94,10 @@ impl Integrator for McMurchieDavidson {
     fn electron_repulsion(
         &self,
         functions: (
-            &Self::Function,
-            &Self::Function,
-            &Self::Function,
-            &Self::Function,
+            &Self::Item,
+            &Self::Item,
+            &Self::Item,
+            &Self::Item,
         ),
     ) -> f64 {
         let (basis_a, basis_b, basis_c, basis_d) = functions;

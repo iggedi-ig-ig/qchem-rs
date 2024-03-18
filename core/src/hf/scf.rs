@@ -133,7 +133,7 @@ fn compute_nuclear_repulsion(atoms: &[Atom]) -> f64 {
 
 pub fn compute_overlap_matrix(
     basis: &[BasisFunction],
-    integrator: &impl Integrator<Function = BasisFunction>,
+    integrator: &impl Integrator<Item = BasisFunction>,
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(basis.len(), |i, j| {
         let overlap_ij = integrator.overlap((&basis[i], &basis[j]));
@@ -144,7 +144,7 @@ pub fn compute_overlap_matrix(
 
 pub fn compute_kinetic_matrix(
     basis: &[BasisFunction],
-    integrator: &impl Integrator<Function = BasisFunction>,
+    integrator: &impl Integrator<Item = BasisFunction>,
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(basis.len(), |i, j| {
         let kinetic_ij = integrator.kinetic((&basis[i], &basis[j]));
@@ -156,7 +156,7 @@ pub fn compute_kinetic_matrix(
 pub fn compute_nuclear_matrix(
     basis: &[BasisFunction],
     nuclei: &[Atom],
-    integrator: &impl Integrator<Function = BasisFunction>,
+    integrator: &impl Integrator<Item = BasisFunction>,
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(basis.len(), |i, j| {
         let nuclear_ij = integrator.nuclear((&basis[i], &basis[j]), nuclei);
