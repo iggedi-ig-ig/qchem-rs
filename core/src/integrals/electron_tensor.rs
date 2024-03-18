@@ -77,16 +77,16 @@ impl ElectronTensor {
     /// computed for each unique combination of four Gaussian functions in the given basis set.
     pub fn from_basis(
         basis: &[BasisFunction],
-        integrator: &dyn Integrator<Function = BasisFunction>,
+        integrator: &impl Integrator<Function = BasisFunction>,
     ) -> Self {
         // Initialize variables for computing the total number of integrals and a thread-safe
         // container for storing the resulting electron-electron repulsion integrals.
         let n_basis = basis.len();
         let mut data = vec![None; n_basis.pow(4)];
 
-        // compute diagonal first
-        (0..n_basis).for_each(|j| {
-            (j..n_basis).for_each(|i| {
+        // compute diagonal first - we need these entries for screening
+        for j in 0..n_basis {
+            for i in j..n_basis {
                 let index = IntegralIndex::new_unchecked((i, j, i, j));
                 let linear = index.linear(n_basis);
 
@@ -96,40 +96,49 @@ impl ElectronTensor {
                     log::trace!("diagonal electron repulsion ({i}{j}{i}{j}) = {eri_ijij}");
                     eri_ijij
                 });
-            })
-        });
+            }
+        }
 
-        for (w, y) in itertools::iproduct!(0..n_basis, 0..n_basis) {
-            for (z, x) in itertools::iproduct!(w..n_basis, y..n_basis) {
-                let xy = x * (x + 1) / 2 + y;
-                let zw = z * (z + 1) / 2 + w;
+        for w in 0..n_basis {
+            for z in w..n_basis {
+                for y in 0..n_basis {
+                    for x in y..n_basis {
+                        let xy = x * (x + 1) / 2 + y;
+                        let zw = z * (z + 1) / 2 + w;
 
-                // we know that x, y and z, w are always in the correct order (x <= y and z <= w)
-                // we thus only need to correct for hyper order
-                let index =
-                    IntegralIndex::new_unchecked(if xy > zw { (x, y, z, w) } else { (z, w, x, y) });
-                let linear = index.linear(n_basis);
+                        // we know that x, y and z, w are always in the correct order (x <= y and z <= w)
+                        // we thus only need to correct for hyper order
+                        let index = IntegralIndex::new_unchecked(if xy > zw {
+                            (x, y, z, w)
+                        } else {
+                            (z, w, x, y)
+                        });
+                        let linear = index.linear(n_basis);
 
-                let diagonal_index_ij =
-                    IntegralIndex::new_unchecked((index.x, index.y, index.x, index.y));
-                let diagonal_index_kl =
-                    IntegralIndex::new_unchecked((index.z, index.w, index.z, index.w));
+                        let diagonal_index_ij =
+                            IntegralIndex::new_unchecked((index.x, index.y, index.x, index.y));
+                        let diagonal_index_kl =
+                            IntegralIndex::new_unchecked((index.z, index.w, index.z, index.w));
 
-                let estimate = f64::sqrt(
-                    data[diagonal_index_ij.linear(n_basis)].expect("diagonal is set")
-                        * data[diagonal_index_kl.linear(n_basis)].expect("diagonal is set"),
-                );
+                        let estimate = f64::sqrt(
+                            data[diagonal_index_ij.linear(n_basis)].expect("diagonal is set")
+                                * data[diagonal_index_kl.linear(n_basis)].expect("diagonal is set"),
+                        );
 
-                if data[linear].is_none() {
-                    let integral = if estimate > 1e-6 {
-                        integrator.electron_repulsion((&basis[x], &basis[y], &basis[z], &basis[w]))
-                    } else {
-                        0.0
-                    };
+                        if data[linear].is_none() {
+                            let integral = if estimate > 1e-6 {
+                                integrator.electron_repulsion((
+                                    &basis[x], &basis[y], &basis[z], &basis[w],
+                                ))
+                            } else {
+                                0.0
+                            };
 
-                    log::trace!("electron repulsion ({x}{y}{z}{w}) = {integral}");
+                            log::trace!("electron repulsion ({x}{y}{z}{w}) = {integral}");
 
-                    data[linear] = Some(integral);
+                            data[linear] = Some(integral);
+                        }
+                    }
                 }
             }
         }

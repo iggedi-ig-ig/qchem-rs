@@ -228,9 +228,6 @@ fn primitive_nuclear(
 
     let mut sum = 0.0;
     for (t, u, v) in itertools::iproduct!(0..=l1 + l2, 0..=m1 + m2, 0..=n1 + n2) {
-        // TODO: if this was a nested loop, e1 and e2 would not have to be calculated in the inner most branch
-        //  which could potentially speed up computation significantly. It depends on what the compiler does.
-
         let e1 = hermite_expansion([l1, l2, t], diff.x, a, b);
         let e2 = hermite_expansion([m1, m2, u], diff.y, a, b);
         let e3 = hermite_expansion([n1, n2, v], diff.z, a, b);
