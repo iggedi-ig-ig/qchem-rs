@@ -11,7 +11,7 @@ pub struct BasisSet {
 
 impl BasisSet {
     /// Returns the basis of a given atom, if it exists.
-    pub(crate) fn for_atom(&self, atom: &Atom) -> Option<&AtomicBasis> {
+    pub fn for_atom(&self, atom: &Atom) -> Option<&AtomicBasis> {
         self.atomic_mapping.get(&atom.element_type)
     }
 
@@ -23,7 +23,7 @@ impl BasisSet {
 
 /// Represents the basis functions for a single atom.
 #[derive(Debug)]
-pub(crate) struct AtomicBasis {
+pub struct AtomicBasis {
     pub(crate) shells: Vec<ElectronShell>,
 }
 
@@ -32,7 +32,7 @@ impl AtomicBasis {
         Self { shells: Vec::new() }
     }
 
-    pub(crate) fn basis_functions(&self) -> impl Iterator<Item = &BasisFunctionType> {
+    pub fn basis_functions(&self) -> impl Iterator<Item = &BasisFunctionType> {
         self.shells.iter().flat_map(|shell| &shell.basis_functions)
     }
 }

@@ -15,5 +15,10 @@ log = { workspace = true }
 boys = "0.1.0"
 
 [dev-dependencies]
+rand = { workspace = true }
+criterion = "0.5.1"
 approx = "0.5.1"
-rand = "0.8.5"
+
+[[bench]]
+name = "integrals"
+harness = false

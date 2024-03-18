@@ -3,7 +3,7 @@ pub(crate) use electron_tensor::ElectronTensor;
 use crate::atom::Atom;
 
 mod electron_tensor;
-mod mmd;
+pub mod mmd;
 mod utils;
 
 /// The default integrator

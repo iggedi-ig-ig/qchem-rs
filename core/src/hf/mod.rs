@@ -1,7 +1,6 @@
 mod mo;
-mod scf;
-
-use std::ops::Deref;
+pub mod scf;
+pub(super) mod utils;
 
 pub use scf::hartree_fock;
 

@@ -1,6 +1,4 @@
-use std::collections::VecDeque;
-
-use nalgebra::{DMatrix, DVector, SymmetricEigen};
+use nalgebra::DMatrix;
 
 use crate::{
     atom::Atom,
@@ -9,7 +7,7 @@ use crate::{
     integrals::{DefaultIntegrator, ElectronTensor, Integrator},
 };
 
-use super::{HartreeFockInput, HartreeFockOutput};
+use super::{utils, HartreeFockInput, HartreeFockOutput};
 
 pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
     // exchangable integrator
@@ -44,22 +42,22 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
         .map(|atom| atom.charge())
         .sum::<i32>() as usize;
 
-    let nuclear_repulsion = calculate_nuclear_repulsion(&input.molecule.atoms);
+    let nuclear_repulsion = compute_nuclear_repulsion(&input.molecule.atoms);
     log::debug!("nulcear repulsion energy: {nuclear_repulsion}");
 
     // TODO: do we need to pre-calculate all of the integrals? I don't think, for example, all ERI integrals are actually used.
     //  if we could skip some of them, that would be a huge performance gain.
-    let overlap = calculate_overlap_matrix(&basis, &integrator);
+    let overlap = compute_overlap_matrix(&basis, &integrator);
     log::debug!("overlap matrix: {overlap:0.4}");
-    let kinetic = calculate_kinetic_matrix(&basis, &integrator);
+    let kinetic = compute_kinetic_matrix(&basis, &integrator);
     log::debug!("kinetic matrix: {overlap:0.4}");
-    let nuclear = calculate_nuclear_matrix(&basis, &input.molecule.atoms, &integrator);
+    let nuclear = compute_nuclear_matrix(&basis, &input.molecule.atoms, &integrator);
     log::debug!("nuclear matrix: {overlap:0.4}");
     let electron = ElectronTensor::from_basis(&basis, &integrator);
 
     let core_hamiltonian = kinetic + nuclear;
-    let transform = calculate_transformation_matrix(&overlap);
-    let mut density = calculate_hückel_density(
+    let transform = compute_transformation_matrix(&overlap);
+    let mut density = compute_hückel_density(
         &core_hamiltonian,
         &overlap,
         &transform,
@@ -75,15 +73,15 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
 
     // start of scf iteration
     for iteration in 0..=input.max_iterations {
-        let density_guess = calculate_density_guess(&density, &electron_terms, n_basis);
+        let density_guess = compute_density_guess(&density, &electron_terms, n_basis);
 
         let fock = &core_hamiltonian + &density_guess;
 
         let transformed_fock = &transform.transpose() * (&fock * &transform);
-        let (transformed_coefficients, obrital_energies) = sorted_eigs(transformed_fock);
+        let (transformed_coefficients, obrital_energies) = utils::sorted_eigs(transformed_fock);
         let coefficients = &transform * &transformed_coefficients;
 
-        let new_density = calculate_updated_density(&coefficients, n_basis, n_electrons);
+        let new_density = compute_updated_density(&coefficients, n_basis, n_electrons);
 
         const F: f64 = 1.0;
         let density_change = new_density - &density;
@@ -117,7 +115,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
     None
 }
 
-fn calculate_nuclear_repulsion(atoms: &[Atom]) -> f64 {
+fn compute_nuclear_repulsion(atoms: &[Atom]) -> f64 {
     let n_atoms = atoms.len();
 
     let mut potential = 0.0;
@@ -130,45 +128,42 @@ fn calculate_nuclear_repulsion(atoms: &[Atom]) -> f64 {
     potential
 }
 
-// TODO: the basis argument type is a bit awkward to work with
-fn calculate_overlap_matrix(
+pub fn compute_overlap_matrix(
     basis: &[BasisFunction],
     integrator: &dyn Integrator<Function = BasisFunction>,
 ) -> DMatrix<f64> {
-    hermitian(basis.len(), |i, j| {
+    utils::symmetric_matrix(basis.len(), |i, j| {
         let overlap_ij = integrator.overlap((&basis[i], &basis[j]));
         log::trace!("overlap ({i}{j}) = {overlap_ij}");
         overlap_ij
     })
 }
 
-// TODO: the basis argument type is a bit awkward to work with
-fn calculate_kinetic_matrix(
+pub fn compute_kinetic_matrix(
     basis: &[BasisFunction],
     integrator: &dyn Integrator<Function = BasisFunction>,
 ) -> DMatrix<f64> {
-    hermitian(basis.len(), |i, j| {
+    utils::symmetric_matrix(basis.len(), |i, j| {
         let kinetic_ij = integrator.kinetic((&basis[i], &basis[j]));
         log::trace!("kinetic ({i}{j}) = {kinetic_ij}");
         kinetic_ij
     })
 }
 
-// TODO: the basis argument type is a bit awkward to work with
-fn calculate_nuclear_matrix(
+pub fn compute_nuclear_matrix(
     basis: &[BasisFunction],
     nuclei: &[Atom],
     integrator: &dyn Integrator<Function = BasisFunction>,
 ) -> DMatrix<f64> {
-    hermitian(basis.len(), |i, j| {
+    utils::symmetric_matrix(basis.len(), |i, j| {
         let nuclear_ij = integrator.nuclear((&basis[i], &basis[j]), nuclei);
         log::trace!("nuclear ({i}{j}) = {nuclear_ij}");
         nuclear_ij
     })
 }
 
-fn calculate_transformation_matrix(overlap: &DMatrix<f64>) -> DMatrix<f64> {
-    let (u, _) = eigs(overlap.clone());
+fn compute_transformation_matrix(overlap: &DMatrix<f64>) -> DMatrix<f64> {
+    let (u, _) = utils::eigs(overlap.clone());
     let diagonal_matrix = &u.transpose() * (overlap * &u);
 
     let diagonal_inv_sqrt =
@@ -176,32 +171,32 @@ fn calculate_transformation_matrix(overlap: &DMatrix<f64>) -> DMatrix<f64> {
     &u * (diagonal_inv_sqrt * &u.transpose())
 }
 
-fn calculate_hückel_density(
+fn compute_hückel_density(
     hamiltonian: &DMatrix<f64>,
     overlap: &DMatrix<f64>,
     transform: &DMatrix<f64>,
     n_basis: usize,
     n_electrons: usize,
 ) -> DMatrix<f64> {
-    let hamiltonian_eht = hermitian(n_basis, |i, j| {
+    let hamiltonian_eht = utils::symmetric_matrix(n_basis, |i, j| {
         0.875 * overlap[(i, j)] * (hamiltonian[(i, i)] + hamiltonian[(j, j)])
     });
 
     let transformed = &transform.transpose() * (hamiltonian_eht * transform);
-    let (coeffs_prime, _orbital_energies) = sorted_eigs(transformed);
+    let (coeffs_prime, _orbital_energies) = utils::sorted_eigs(transformed);
     let coeffs = transform * coeffs_prime;
 
-    hermitian(n_basis, |i, j| {
+    utils::symmetric_matrix(n_basis, |i, j| {
         2.0 * (0..n_electrons / 2).fold(0.0, |acc, k| acc + coeffs[(i, k)] * coeffs[(j, k)])
     })
 }
 
-fn calculate_density_guess(
+fn compute_density_guess(
     density: &DMatrix<f64>,
     electron_terms: &[f64],
     n_basis: usize,
 ) -> DMatrix<f64> {
-    hermitian(n_basis, |i, j| {
+    utils::symmetric_matrix(n_basis, |i, j| {
         (0..n_basis).fold(0.0, |acc, y| {
             acc + (0..n_basis).fold(0.0, |acc, x| {
                 acc + density[(x, y)]
@@ -211,82 +206,15 @@ fn calculate_density_guess(
     })
 }
 
-fn calculate_updated_density(
+fn compute_updated_density(
     coefficients: &DMatrix<f64>,
     n_basis: usize,
     n_electrons: usize,
 ) -> DMatrix<f64> {
-    hermitian(n_basis, |i, j| {
+    utils::symmetric_matrix(n_basis, |i, j| {
         2.0 * (0..n_electrons / 2).fold(0.0, |acc, k| {
             acc + coefficients[(i, k)] * coefficients[(j, k)]
         })
-    })
-}
-
-fn hermitian(n: usize, mut func: impl FnMut(usize, usize) -> f64) -> DMatrix<f64> {
-    let m = DMatrix::from_fn(n, n, |i, j| if i <= j { func(i, j) } else { 0.0 });
-    DMatrix::from_fn(n, n, |i, j| if i <= j { m[(i, j)] } else { m[(j, i)] })
-}
-
-fn eigs(matrix: DMatrix<f64>) -> (DMatrix<f64>, DVector<f64>) {
-    let eigs = SymmetricEigen::new(matrix);
-    (eigs.eigenvectors, eigs.eigenvalues)
-}
-
-fn sorted_eigs(matrix: DMatrix<f64>) -> (DMatrix<f64>, DVector<f64>) {
-    let (eigenvectors, eigenvalues) = eigs(matrix);
-
-    let mut val_vec_pairs = eigenvalues
-        .into_iter()
-        .zip(eigenvectors.column_iter())
-        .collect::<Vec<_>>();
-
-    val_vec_pairs.sort_unstable_by(|(a, _), (b, _)| a.total_cmp(b));
-
-    let (values, vectors): (Vec<_>, Vec<_>) = val_vec_pairs.into_iter().unzip();
-
-    (
-        DMatrix::from_columns(&vectors),
-        DVector::from_column_slice(&values),
-    )
-}
-
-// TODO: reimplement diis
-fn _diis(
-    error_vectors: &VecDeque<DMatrix<f64>>,
-    fock_matricies: &VecDeque<DMatrix<f64>>,
-) -> Option<DMatrix<f64>> {
-    assert_eq!(error_vectors.len(), fock_matricies.len());
-    let n = error_vectors.len();
-
-    let mut matrix = DMatrix::zeros(n + 1, n + 1);
-    // upper block
-    for (i, j) in itertools::iproduct!(0..n, 0..n) {
-        matrix[(i, j)] = error_vectors[i].dot(&error_vectors[j]);
-    }
-
-    // last row
-    for i in 0..n {
-        matrix[(n, i)] = -1.0;
-    }
-
-    // last col
-    for i in 0..n {
-        matrix[(i, n)] = -1.0;
-    }
-
-    // last entry
-    matrix[(n, n)] = 0.0;
-
-    let mut b = DVector::zeros(n + 1);
-    b[(n, 0)] = -1.0;
-
-    matrix.try_inverse().map(|inv| inv * b).map(|c| {
-        c.iter()
-            .enumerate()
-            .take(n)
-            .map(|(i, &x)| x * &fock_matricies[i])
-            .sum()
     })
 }
 

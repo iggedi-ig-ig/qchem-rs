@@ -1,8 +1,9 @@
 use nalgebra::Vector3;
+use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 
 /// Function of the form K*x^i*y^j*z^k*exp(-alpha*x^2)
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Gaussian {
     pub exponent: f64,
     /// The coefficient of this gaussian and optionally the normalization constant
@@ -29,18 +30,18 @@ impl Gaussian {
 }
 
 /// Linear combination of many [`Gaussian`]s
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContractedGaussian(pub SmallVec<[Gaussian; 6]>);
 
 /// The type a basis function can have.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum BasisFunctionType {
     /// A linear combination of many primitive gaussians
     ContractedGaussian(ContractedGaussian),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BasisFunction {
     /// The type of basis function this basis function has
     pub function_type: BasisFunctionType,

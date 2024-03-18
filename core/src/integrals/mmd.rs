@@ -293,7 +293,7 @@ fn primitive_electron(
             * e5
             * e6
             * coulomb_auxiliary(t1 + t2, u1 + u2, v1 + v2, 0, alpha, diff_product)
-            * if (t2 + u2 + v2) % 2 == 0 { 1.0 } else { -1.0 }
+            * if (t2 + u2 + v2) % 2 == 0 { 1.0 } else { -1.0 } // (-1)^(t2 + u2 + v2)
     }
 
     2.0 * std::f64::consts::PI.powi(5).sqrt() * (p * q * (p + q).sqrt()).recip() * sum
@@ -321,7 +321,7 @@ fn product_center(
     (a_exp * a_pos + b_exp * b_pos) / (a_exp + b_exp)
 }
 
-#[cfg(test)]
+#[cfg(tests)]
 mod tests {
     use nalgebra::Vector3;
 

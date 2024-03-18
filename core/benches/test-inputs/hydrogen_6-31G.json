@@ -1,0 +1,120 @@
+{
+    "basis_functions": [
+        {
+            "function_type": {
+                "ContractedGaussian": [
+                    {
+                        "exponent": 18.73113696,
+                        "coefficient": 0.2149354488921539,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    },
+                    {
+                        "exponent": 2.825394365,
+                        "coefficient": 0.3645712021918747,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    },
+                    {
+                        "exponent": 0.6401216923,
+                        "coefficient": 0.41505142783189464,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    }
+                ]
+            },
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "function_type": {
+                "ContractedGaussian": [
+                    {
+                        "exponent": 0.1612777588,
+                        "coefficient": 0.18138064917865246,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    }
+                ]
+            },
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "function_type": {
+                "ContractedGaussian": [
+                    {
+                        "exponent": 18.73113696,
+                        "coefficient": 0.2149354488921539,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    },
+                    {
+                        "exponent": 2.825394365,
+                        "coefficient": 0.3645712021918747,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    },
+                    {
+                        "exponent": 0.6401216923,
+                        "coefficient": 0.41505142783189464,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    }
+                ]
+            },
+            "position": [
+                0.0,
+                0.0,
+                1.4
+            ]
+        },
+        {
+            "function_type": {
+                "ContractedGaussian": [
+                    {
+                        "exponent": 0.1612777588,
+                        "coefficient": 0.18138064917865246,
+                        "angular": [
+                            0,
+                            0,
+                            0
+                        ]
+                    }
+                ]
+            },
+            "position": [
+                0.0,
+                0.0,
+                1.4
+            ]
+        }
+    ]
+}

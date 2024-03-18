@@ -15,4 +15,9 @@ impl Atom {
     pub(crate) fn charge(&self) -> i32 {
         self.element_type as i32
     }
+
+    pub fn position(&self) -> &Vector3<f64> {
+        &self.position
+    }
 }
+
