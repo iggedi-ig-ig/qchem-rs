@@ -1,3 +1,5 @@
+use std::str::EncodeUtf16;
+
 use itertools::iproduct;
 use nalgebra::DMatrix;
 
@@ -188,7 +190,11 @@ fn compute_hückel_density(
     let coeffs = transform * coeffs_prime;
 
     utils::symmetric_matrix(n_basis, |i, j| {
-        2.0 * (0..n_electrons / 2).fold(0.0, |acc, k| acc + coeffs[(i, k)] * coeffs[(j, k)])
+        let mut sum = 0.0;
+        for k in 0..n_electrons / 2 {
+            sum += coeffs[(i, k)] * coeffs[(j, k)];
+        }
+        2.0 * sum
     })
 }
 
@@ -217,9 +223,11 @@ fn compute_updated_density(
     n_electrons: usize,
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(n_basis, |i, j| {
-        2.0 * (0..n_electrons / 2).fold(0.0, |acc, k| {
-            acc + coefficients[(i, k)] * coefficients[(j, k)]
-        })
+        let mut sum = 0.0;
+        for k in 0..n_electrons / 2 {
+            sum += coefficients[(i, k)] * coefficients[(j, k)]
+        }
+        2.0 * sum
     })
 }
 
