@@ -28,13 +28,7 @@ pub mod testing {
 
             for atom in molecule.atoms() {
                 let atomic_basis = basis_set.for_atom(atom).unwrap();
-
-                basis_functions.extend(atomic_basis.basis_functions().map(|function_type| {
-                    BasisFunction {
-                        function_type: function_type.clone(),
-                        position: atom.position,
-                    }
-                }))
+                basis_functions.extend(atomic_basis.basis_for(atom))
             }
 
             Self {

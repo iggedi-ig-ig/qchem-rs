@@ -33,18 +33,10 @@ impl Gaussian {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContractedGaussian(pub SmallVec<[Gaussian; 6]>);
 
-/// The type a basis function can have.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[non_exhaustive]
-pub enum BasisFunctionType {
-    /// A linear combination of many primitive gaussians
-    ContractedGaussian(ContractedGaussian),
-}
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BasisFunction {
     /// The type of basis function this basis function has
-    pub function_type: BasisFunctionType,
+    pub contracted_gaussian: ContractedGaussian,
     /// The position of this basis function, in natural units
     pub position: Vector3<f64>,
 }

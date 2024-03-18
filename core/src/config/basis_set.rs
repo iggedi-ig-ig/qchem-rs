@@ -4,9 +4,7 @@ use serde::Deserialize;
 use smallvec::SmallVec;
 
 use crate::{
-    basis::{
-        AtomicBasis, BasisFunctionType, BasisSet, ContractedGaussian, ElectronShell, Gaussian,
-    },
+    basis::{AtomicBasis, BasisSet, ContractedGaussian, ElectronShell, Gaussian},
     periodic_table::ElementType,
 };
 
@@ -68,11 +66,7 @@ impl TryFrom<ConfigBasisSet> for BasisSet {
                             });
                         }
 
-                        shell
-                            .basis_functions
-                            .push(BasisFunctionType::ContractedGaussian(ContractedGaussian(
-                                primitives,
-                            )));
+                        shell.basis_functions.push(ContractedGaussian(primitives));
                     }
 
                     element_atomic_basis.shells.push(shell);
