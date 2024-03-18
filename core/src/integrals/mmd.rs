@@ -332,7 +332,7 @@ fn product_center(
     (a_exp * a_pos + b_exp * b_pos) / (a_exp + b_exp)
 }
 
-#[cfg(tests)]
+#[cfg(test)]
 mod tests {
     use nalgebra::Vector3;
 

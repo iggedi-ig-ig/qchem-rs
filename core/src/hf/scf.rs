@@ -1,6 +1,3 @@
-use std::str::EncodeUtf16;
-
-use itertools::iproduct;
 use nalgebra::DMatrix;
 
 use crate::{
