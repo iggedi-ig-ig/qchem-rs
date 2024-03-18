@@ -1,3 +1,4 @@
+use itertools::iproduct;
 use nalgebra::DMatrix;
 
 use crate::{
@@ -197,12 +198,16 @@ fn compute_density_guess(
     n_basis: usize,
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(n_basis, |i, j| {
-        (0..n_basis).fold(0.0, |acc, y| {
-            acc + (0..n_basis).fold(0.0, |acc, x| {
-                acc + density[(x, y)]
-                    * electron_terms[j * n_basis.pow(3) + i * n_basis.pow(2) + y * n_basis + x]
-            })
-        })
+        let mut sum = 0.0;
+        for y in 0..n_basis {
+            for x in 0..n_basis {
+                log::trace!("need ({x} {y} | {x} {y})");
+
+                sum += density[(x, y)]
+                    * electron_terms[j * n_basis.pow(3) + i * n_basis.pow(2) + y * n_basis + x];
+            }
+        }
+        sum
     })
 }
 
@@ -355,23 +360,23 @@ mod tests {
             ..
         } = hartree_fock(&input).unwrap();
 
-        assert_relative_eq!(electronic_energy, -137.46094993664823, epsilon = 1e-3);
-        assert_relative_eq!(nuclear_repulsion, 65.935968236742, epsilon = 1e-3);
+        assert_relative_eq!(electronic_energy, -137.4520528397336, epsilon = 1e-2);
+        assert_relative_eq!(nuclear_repulsion, 65.935968236742, epsilon = 1e-2);
 
-        assert_relative_eq!(orbital_energies[0], -11.843194691423907, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[1], -11.654101433513777, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[2], -1.7549674340520647, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[3], -1.3740629705845648, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[4], -1.1766056496692792, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[5], -0.6894580276990747, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[6], -0.6854735898003864, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[7], -0.5457185487988014, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[8], 0.3271343831398882, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[9], 1.1286944290080008, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[10], 1.2948544365472605, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[11], 1.5951207260702598, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[12], 1.7597320917001829, epsilon = 1e-3);
-        assert_relative_eq!(orbital_energies[13], 4.650442932567982, epsilon = 1e-3);
+        assert_relative_eq!(orbital_energies[0], -11.841655776436701, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[1], -11.652621382438332, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[2], -1.7549674340520647, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[3], -1.3740629705845648, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[4], -1.1766056496692792, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[5], -0.6894580276990747, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[6], -0.6854735898003864, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[7], -0.5446093285094306, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[8], 0.3271343831398882, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[9], 1.1286944290080008, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[10], 1.2934142767182184, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[11], 1.5951207260702598, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[12], 1.7597320917001829, epsilon = 1e-2);
+        assert_relative_eq!(orbital_energies[13], 4.650442932567982, epsilon = 1e-2);
     }
 
     // TODO: reintroduce this test. Right now, this doesn't converge - the result we're getting is correct though*

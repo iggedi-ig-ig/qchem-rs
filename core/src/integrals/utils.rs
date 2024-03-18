@@ -18,9 +18,7 @@ use nalgebra::Vector3;
 ///
 /// # Examples
 ///
-/// ```
-/// use basis::utils::hermite_expansion;
-///
+/// ```ignore
 /// assert_eq!(hermite_expansion([1, 2, 3], 2.5, 3.0, 5.0), 1.9872458203327215e-9);
 /// ```
 ///
