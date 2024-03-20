@@ -29,9 +29,9 @@ pub mod testing {
             for atom in molecule.atoms() {
                 let atomic_basis = basis_set.for_atom(atom).unwrap();
 
-                basis_functions.extend(atomic_basis.basis_functions().map(|function_type| {
+                basis_functions.extend(atomic_basis.basis_functions().map(|contracted_gaussian| {
                     BasisFunction {
-                        function_type: function_type.clone(),
+                        contracted_gaussian: contracted_gaussian.clone(),
                         position: atom.position,
                     }
                 }))

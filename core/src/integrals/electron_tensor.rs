@@ -116,9 +116,9 @@ impl ElectronTensor {
                         let linear = index.linear(n_basis);
 
                         let diagonal_index_ij =
-                            IntegralIndex::new_unchecked((index.x, index.y, index.x, index.y));
+                            IntegralIndex::new((index.x, index.y, index.x, index.y));
                         let diagonal_index_kl =
-                            IntegralIndex::new_unchecked((index.z, index.w, index.z, index.w));
+                            IntegralIndex::new((index.z, index.w, index.z, index.w));
 
                         let estimate = f64::sqrt(
                             data[diagonal_index_ij.linear(n_basis)].expect("diagonal is set")
@@ -126,7 +126,8 @@ impl ElectronTensor {
                         );
 
                         if data[linear].is_none() {
-                            let integral = if estimate > 1e-6 {
+                            let screened = estimate <= 1e-6;
+                            let integral = if !screened {
                                 integrator.electron_repulsion((
                                     &basis[x], &basis[y], &basis[z], &basis[w],
                                 ))
@@ -134,7 +135,7 @@ impl ElectronTensor {
                                 0.0
                             };
 
-                            log::trace!("electron repulsion ({x}{y}{z}{w}) = {integral}");
+                            log::trace!("electron repulsion ({x}{y}{z}{w}) = {integral:<1.3}. estimate {estimate:<1.3} screened? {screened}");
 
                             data[linear] = Some(integral);
                         }

@@ -6,7 +6,7 @@ use nalgebra::Vector3;
 
 use crate::{
     atom::Atom,
-    basis::{BasisFunction, BasisFunctionType, ContractedGaussian, Gaussian},
+    basis::{BasisFunction, ContractedGaussian, Gaussian},
 };
 
 use super::{
@@ -24,11 +24,8 @@ impl Integrator for McMurchieDavidson {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
-        match (&basis_a.function_type, &basis_b.function_type) {
-            (
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_a)),
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_b)),
-            ) => {
+        match (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian) {
+            (ContractedGaussian(data_a), ContractedGaussian(data_b)) => {
                 let mut output = 0.0;
                 for (&primitive_a, &primitive_b) in itertools::iproduct!(data_a, data_b) {
                     output += primitive_a.coefficient
@@ -44,11 +41,8 @@ impl Integrator for McMurchieDavidson {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
-        match (&basis_a.function_type, &basis_b.function_type) {
-            (
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_a)),
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_b)),
-            ) => {
+        match (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian) {
+            (ContractedGaussian(data_a), ContractedGaussian(data_b)) => {
                 let mut output = 0.0;
                 for (&primitive_a, &primitive_b) in itertools::iproduct!(data_a, data_b) {
                     output += primitive_a.coefficient
@@ -64,11 +58,8 @@ impl Integrator for McMurchieDavidson {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
-        match (&basis_a.function_type, &basis_b.function_type) {
-            (
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_a)),
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_b)),
-            ) => {
+        match (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian) {
+            (ContractedGaussian(data_a), ContractedGaussian(data_b)) => {
                 let mut output = 0.0;
                 // TODO: experiment with order of iteration - maybe it's faster to iterate through nuclei in the inner-most loop
                 for (nucleus, &primitive_a, &primitive_b) in
@@ -93,28 +84,23 @@ impl Integrator for McMurchieDavidson {
 
     fn electron_repulsion(
         &self,
-        functions: (
-            &Self::Item,
-            &Self::Item,
-            &Self::Item,
-            &Self::Item,
-        ),
+        functions: (&Self::Item, &Self::Item, &Self::Item, &Self::Item),
     ) -> f64 {
         let (basis_a, basis_b, basis_c, basis_d) = functions;
         let diff_ab = basis_b.position - basis_a.position;
         let diff_cd = basis_d.position - basis_c.position;
 
         match (
-            &basis_a.function_type,
-            &basis_b.function_type,
-            &basis_c.function_type,
-            &basis_d.function_type,
+            &basis_a.contracted_gaussian,
+            &basis_b.contracted_gaussian,
+            &basis_c.contracted_gaussian,
+            &basis_d.contracted_gaussian,
         ) {
             (
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_a)),
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_b)),
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_c)),
-                BasisFunctionType::ContractedGaussian(ContractedGaussian(data_d)),
+                ContractedGaussian(data_a),
+                ContractedGaussian(data_b),
+                ContractedGaussian(data_c),
+                ContractedGaussian(data_d),
             ) => {
                 let mut output = 0.0;
                 for &primitive_a in data_a {

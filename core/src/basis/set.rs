@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{atom::Atom, periodic_table::ElementType};
 
-use super::BasisFunctionType;
+use super::ContractedGaussian;
 
 #[derive(Debug)]
 pub struct BasisSet {
@@ -32,7 +32,7 @@ impl AtomicBasis {
         Self { shells: Vec::new() }
     }
 
-    pub fn basis_functions(&self) -> impl Iterator<Item = &BasisFunctionType> {
+    pub fn basis_functions(&self) -> impl Iterator<Item = &ContractedGaussian> {
         self.shells.iter().flat_map(|shell| &shell.basis_functions)
     }
 }
@@ -40,7 +40,7 @@ impl AtomicBasis {
 #[derive(Debug, Clone)]
 pub(crate) struct ElectronShell {
     pub(crate) angular_magnitude: i32,
-    pub(crate) basis_functions: Vec<BasisFunctionType>,
+    pub(crate) basis_functions: Vec<ContractedGaussian>,
 }
 
 impl ElectronShell {

@@ -27,7 +27,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
             atomic_basis
                 .basis_functions()
                 .map(|function_type| BasisFunction {
-                    function_type: function_type.clone(),
+                    contracted_gaussian: function_type.clone(),
                     position: atom.position,
                 })
         })
@@ -83,7 +83,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
 
         let new_density = compute_updated_density(&coefficients, n_basis, n_electrons);
 
-        const F: f64 = 1.0;
+        const F: f64 = 0.5;
         let density_change = new_density - &density;
         density += &density_change * F;
 
@@ -204,8 +204,6 @@ fn compute_density_guess(
         let mut sum = 0.0;
         for y in 0..n_basis {
             for x in 0..n_basis {
-                log::trace!("need ({x} {y} | {x} {y})");
-
                 sum += density[(x, y)]
                     * electron_terms[j * n_basis.pow(3) + i * n_basis.pow(2) + y * n_basis + x];
             }
