@@ -9,6 +9,7 @@ use crate::{
 
 use super::{utils, HartreeFockInput, HartreeFockOutput};
 
+/// Run restricted hartree fock for a given input
 pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
     // exchangable integrator
     let integrator = DefaultIntegrator::default();
