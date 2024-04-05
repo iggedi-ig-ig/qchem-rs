@@ -1,4 +1,5 @@
-A general purpose quantum chemistry program
+A toy quantum chemistry program.
 
-# TODO
-add general purpose quantum chemistry program
+### Current Features
+- Restricted Hartree Fock
+- CLI interface
