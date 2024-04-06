@@ -1,5 +1,5 @@
 A toy quantum chemistry program.
 
 ### Current Features
-- Restricted Hartree Fock
+- Restricted + Unrestricted Hartree Fock
 - CLI interface
