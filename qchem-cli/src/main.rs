@@ -1,7 +1,7 @@
 use core::{
     basis::BasisSet,
     config::{ConfigBasisSet, ConfigMolecule},
-    hf::{hartree_fock, HartreeFockInput, HartreeFockOutput},
+    hf::{restricted_hartree_fock, HartreeFockInput, HartreeFockOutput, MolecularElectronConfig},
     molecule::Molecule,
 };
 use std::{error::Error, fs::File, path::PathBuf};
@@ -20,14 +20,37 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum QcCommand {
-    #[command(name = "hf")]
-    HartreeFock {
+    #[command(name = "rhf")]
+    RestrictedHartreeFock {
         /// What basis set to use for the hartree fock calculation
         #[arg(long, short)]
         basis_set: PathBuf,
         /// A path to the molecule to perform the calculation on
         #[arg(long, short)]
         molecule: PathBuf,
+        /// The maximum number of iterations the SCF loop should attempt before the
+        /// system is considered to not diverge
+        #[arg(long, default_value_t = 100)]
+        max_iterations: usize,
+        /// if the rms of the density matrix drops below this, the system is considered
+        /// converged
+        #[arg(long, default_value_t = 1e-6)]
+        epsilon: f64,
+    },
+    #[command(name = "uhf")]
+    UnrestrictedHartreeFock {
+        /// What basis set to use for the hartree fock calculation
+        #[arg(long, short)]
+        basis_set: PathBuf,
+        /// A path to the molecule to perform the calculation on
+        #[arg(long, short)]
+        molecule: PathBuf,
+        /// The charge of the molecule
+        #[arg(long, short, default_value_t = 0)]
+        charge: i32,
+        /// The spin multiplicity of the molecule
+        #[arg(long, short, default_value_t = 0)]
+        spin_multiplicity: u32,
         /// The maximum number of iterations the SCF loop should attempt before the
         /// system is considered to not diverge
         #[arg(long, default_value_t = 100)]
@@ -45,7 +68,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Args = Args::parse();
 
     match args.command {
-        QcCommand::HartreeFock {
+        QcCommand::RestrictedHartreeFock {
             basis_set,
             molecule,
             max_iterations,
@@ -57,8 +80,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             let basis_set: BasisSet = basis_set.try_into()?;
             let molecule: Molecule = molecule.into();
 
-            let hf_output = hartree_fock(&HartreeFockInput {
+            let hf_output = restricted_hartree_fock(&HartreeFockInput {
                 molecule: &molecule,
+                configuration: MolecularElectronConfig::ClosedShell,
                 basis_set: &basis_set,
                 max_iterations,
                 epsilon,
@@ -74,14 +98,24 @@ fn main() -> Result<(), Box<dyn Error>> {
                         ..
                     },
                 ) => {
-                    log::info!("hartree fock converged after {iterations} iterations");
-                    log::info!("electronic energy: {electronic_energy:3.3}");
-                    log::info!("nuclear repulsion energy: {nuclear_repulsion:3.3}");
-                    log::info!("hartree fock energy: {:3.3}", output.total_energy());
-                    log::info!("orbital energies: {orbital_energies:3.3?}");
+                    println!("hartree fock converged after {iterations} iterations");
+                    println!("electronic energy: {electronic_energy:3.3}");
+                    println!("nuclear repulsion energy: {nuclear_repulsion:3.3}");
+                    println!("hartree fock energy: {:3.3}", output.total_energy());
+                    println!("orbital energies: {orbital_energies:3.3?}");
                 }
-                None => log::error!("hartree fock did not converge"),
+                None => panic!("hartree fock did not converge"),
             }
+        }
+        QcCommand::UnrestrictedHartreeFock {
+            basis_set: _,
+            molecule: _,
+            charge: _,
+            spin_multiplicity: _,
+            max_iterations: _,
+            epsilon: _,
+        } => {
+            unimplemented!("Unrestricted hartree fock is not implemented yet");
         }
     }
 

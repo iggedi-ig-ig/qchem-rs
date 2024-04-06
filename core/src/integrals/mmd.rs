@@ -219,7 +219,7 @@ fn primitive_nuclear(
         let e3 = hermite_expansion([n1, n2, v], diff.z, a, b);
         sum += e1 * e2 * e3 * coulomb_auxiliary(t, u, v, 0, p, diff_nucleus)
     }
-    (-nucleus.charge() as f64 * std::f64::consts::TAU / p) * sum
+    (-nucleus.nuclear_charge() as f64 * std::f64::consts::TAU / p) * sum
 }
 
 fn primitive_electron(

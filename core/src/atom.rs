@@ -7,12 +7,11 @@ use crate::periodic_table::ElementType;
 pub struct Atom {
     pub(crate) position: Vector3<f64>,
     pub(crate) element_type: ElementType,
-    // TODO: ionic charge? Or do we only store that as a molecule property?
-    // TODO: at some point, mass might become necessary aswell
 }
 
 impl Atom {
-    pub(crate) fn charge(&self) -> i32 {
+    /// Returns the charge of this nucleus 
+    pub fn nuclear_charge(&self) -> i32 {
         self.element_type as i32
     }
 
@@ -20,4 +19,3 @@ impl Atom {
         &self.position
     }
 }
-

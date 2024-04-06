@@ -9,7 +9,7 @@ use crate::{
 
 use super::{utils, HartreeFockInput, HartreeFockOutput};
 
-pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
+pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
     // exchangable integrator
     let integrator = DefaultIntegrator::default();
 
@@ -35,12 +35,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
 
     let n_basis = basis.len();
 
-    let n_electrons = input
-        .molecule
-        .atoms
-        .iter()
-        .map(|atom| atom.charge())
-        .sum::<i32>() as usize;
+    let n_electrons = input.n_electrons();
 
     let nuclear_repulsion = compute_nuclear_repulsion(&input.molecule.atoms);
     log::debug!("nulcear repulsion energy: {nuclear_repulsion}");
@@ -73,9 +68,10 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
 
     // start of scf iteration
     for iteration in 0..=input.max_iterations {
-        let density_guess = compute_density_guess(&density, &electron_terms, n_basis);
+        let electronic_hamiltonian =
+            compute_electronic_hamiltonian(&density, &electron_terms, n_basis);
 
-        let fock = &core_hamiltonian + &density_guess;
+        let fock = &core_hamiltonian + &electronic_hamiltonian;
 
         let transformed_fock = &transform.transpose() * (&fock * &transform);
         let (transformed_coefficients, obrital_energies) = utils::sorted_eigs(transformed_fock);
@@ -88,7 +84,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
         density += &density_change * F;
 
         let electronic_energy =
-            0.5 * (&density * (2.0 * &core_hamiltonian + &density_guess)).trace();
+            0.5 * (&density * (2.0 * &core_hamiltonian + &electronic_hamiltonian)).trace();
 
         let density_rms =
             (density_change.map_diagonal(|entry| entry.powi(2)).sum() / n_basis as f64).sqrt();
@@ -99,7 +95,7 @@ pub fn hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
 
         if density_rms < input.epsilon {
             let electronic_energy =
-                0.5 * (&density * (2.0 * &core_hamiltonian + &density_guess)).trace();
+                0.5 * (&density * (2.0 * &core_hamiltonian + &electronic_hamiltonian)).trace();
             return Some(HartreeFockOutput {
                 orbitals: MolecularOrbitals::from_coefficient_matrix(&coefficients),
                 basis,
@@ -121,7 +117,7 @@ fn compute_nuclear_repulsion(atoms: &[Atom]) -> f64 {
     let mut potential = 0.0;
     for atom_a in 0..n_atoms {
         for atom_b in atom_a + 1..n_atoms {
-            potential += (atoms[atom_a].charge() * atoms[atom_b].charge()) as f64
+            potential += (atoms[atom_a].nuclear_charge() * atoms[atom_b].nuclear_charge()) as f64
                 / (atoms[atom_b].position - atoms[atom_a].position).norm()
         }
     }
@@ -195,7 +191,7 @@ fn compute_hückel_density(
     })
 }
 
-fn compute_density_guess(
+fn compute_electronic_hamiltonian(
     density: &DMatrix<f64>,
     electron_terms: &[f64],
     n_basis: usize,
@@ -234,7 +230,9 @@ mod tests {
     use crate::{
         basis::BasisSet,
         config::ConfigBasisSet,
-        hf::{hartree_fock, HartreeFockInput, HartreeFockOutput},
+        hf::{
+            restricted_hartree_fock, HartreeFockInput, HartreeFockOutput, MolecularElectronConfig,
+        },
     };
 
     macro_rules! molecule {
@@ -265,6 +263,7 @@ mod tests {
 
         let input = HartreeFockInput {
             molecule: &molecule,
+            configuration: MolecularElectronConfig::ClosedShell,
             basis_set: &basis_set,
             max_iterations: 100,
             epsilon: 1e-6,
@@ -275,7 +274,7 @@ mod tests {
             electronic_energy,
             nuclear_repulsion,
             ..
-        } = hartree_fock(&input).unwrap();
+        } = restricted_hartree_fock(&input).unwrap();
 
         assert_relative_eq!(electronic_energy, -1.8410539726907735, epsilon = 1e-3);
         assert_relative_eq!(nuclear_repulsion, 0.7142857142857142, epsilon = 1e-3);
@@ -300,6 +299,7 @@ mod tests {
 
         let input = HartreeFockInput {
             molecule: &molecule,
+            configuration: MolecularElectronConfig::ClosedShell,
             basis_set: &basis_set,
             max_iterations: 100,
             epsilon: 1e-6,
@@ -310,7 +310,7 @@ mod tests {
             electronic_energy,
             nuclear_repulsion,
             ..
-        } = hartree_fock(&input).unwrap();
+        } = restricted_hartree_fock(&input).unwrap();
 
         // we're relatively lenient with accuracy here - but that's alright. The current
         // implementation of the boys function is only accurate to about 3 digits, so we
@@ -351,6 +351,7 @@ mod tests {
 
         let input = HartreeFockInput {
             molecule: &molecule,
+            configuration: MolecularElectronConfig::ClosedShell,
             basis_set: &basis_set,
             max_iterations: 100,
             epsilon: 1e-6,
@@ -361,7 +362,7 @@ mod tests {
             electronic_energy,
             nuclear_repulsion,
             ..
-        } = hartree_fock(&input).unwrap();
+        } = restricted_hartree_fock(&input).unwrap();
 
         assert_relative_eq!(electronic_energy, -137.4520528397336, epsilon = 1e-2);
         assert_relative_eq!(nuclear_repulsion, 65.935968236742, epsilon = 1e-2);
@@ -398,6 +399,7 @@ mod tests {
 
         let input = HartreeFockInput {
             molecule: &molecule,
+            configuration: MolecularElectronConfig::ClosedShell,
             basis_set: &basis_set,
             max_iterations: 100,
             epsilon: 1e-6,
@@ -408,7 +410,7 @@ mod tests {
             electronic_energy,
             nuclear_repulsion,
             ..
-        } = hartree_fock(&input).unwrap();
+        } = restricted_hartree_fock(&input).unwrap();
 
         assert_relative_eq!(electronic_energy, -1057.0756035784825, epsilon = 1e-3);
         assert_relative_eq!(nuclear_repulsion, 145.37223340040237, epsilon = 1e-3);
