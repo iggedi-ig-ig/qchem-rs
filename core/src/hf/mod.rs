@@ -38,6 +38,27 @@ pub struct HartreeFockInput<'a> {
 }
 
 impl HartreeFockInput<'_> {
+    pub(crate) fn basis(&self) -> Vec<BasisFunction> {
+        // TODO: group integral terms by similar terms?
+        self.molecule
+            .atoms
+            .iter()
+            .flat_map(|atom| {
+                let atomic_basis = self
+                    .basis_set
+                    .for_atom(atom)
+                    .unwrap_or_else(|| panic!("no basis for element {:?}", atom.element_type));
+
+                atomic_basis
+                    .basis_functions()
+                    .map(|function_type| BasisFunction {
+                        contracted_gaussian: function_type.clone(),
+                        position: atom.position,
+                    })
+            })
+            .collect::<Vec<_>>()
+    }
+
     /// Returns the number of total electrons in the system
     pub(crate) fn n_electrons(&self) -> usize {
         let base_electron_count = self

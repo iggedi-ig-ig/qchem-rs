@@ -13,25 +13,7 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOu
     // exchangable integrator
     let integrator = DefaultIntegrator::default();
 
-    // TODO: group integral terms by similar terms?
-    let basis = input
-        .molecule
-        .atoms
-        .iter()
-        .flat_map(|atom| {
-            let atomic_basis = input
-                .basis_set
-                .for_atom(atom)
-                .unwrap_or_else(|| panic!("no basis for element {:?}", atom.element_type));
-
-            atomic_basis
-                .basis_functions()
-                .map(|function_type| BasisFunction {
-                    contracted_gaussian: function_type.clone(),
-                    position: atom.position,
-                })
-        })
-        .collect::<Vec<_>>();
+    let basis = input.basis();
 
     let n_basis = basis.len();
 
