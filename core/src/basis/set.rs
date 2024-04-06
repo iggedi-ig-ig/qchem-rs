@@ -38,6 +38,7 @@ impl AtomicBasis {
 }
 
 #[derive(Debug, Clone)]
+#[allow(unused)]
 pub(crate) struct ElectronShell {
     pub(crate) angular_magnitude: i32,
     pub(crate) basis_functions: Vec<ContractedGaussian>,

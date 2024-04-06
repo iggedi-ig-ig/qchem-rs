@@ -1,5 +1,5 @@
 use core::{
-    hf::scf,
+    hf::rhf,
     integrals::{electron_tensor::ElectronTensor, mmd::McMurchieDavidson},
     testing::TestInstance,
 };
@@ -23,7 +23,7 @@ fn bench_overlap(c: &mut Criterion, instances: &[&TestInstance]) -> Result<(), B
         let basis_functions = instance.basis_functions();
 
         c.bench_function(&format!("Overlap {}", instance.name), move |b| {
-            b.iter(move || scf::compute_overlap_matrix(basis_functions, &INTEGRATOR))
+            b.iter(move || rhf::compute_overlap_matrix(basis_functions, &INTEGRATOR))
         });
     }
 
@@ -35,7 +35,7 @@ fn bench_kinetic(c: &mut Criterion, instances: &[&TestInstance]) -> Result<(), B
         let basis_functions = instance.basis_functions();
 
         c.bench_function(&format!("Kinetic {}", instance.name), move |b| {
-            b.iter(move || scf::compute_kinetic_matrix(basis_functions, &INTEGRATOR))
+            b.iter(move || rhf::compute_kinetic_matrix(basis_functions, &INTEGRATOR))
         });
     }
 

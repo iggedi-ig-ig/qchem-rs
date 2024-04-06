@@ -7,9 +7,37 @@ use crate::{
     integrals::{DefaultIntegrator, ElectronTensor, Integrator},
 };
 
-use super::{utils, HartreeFockInput, HartreeFockOutput};
+use super::{utils, HartreeFockInput};
 
-pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOutput> {
+/// The output of a restricted hartree fock calculation
+#[derive(Debug)]
+#[non_exhaustive]
+#[allow(unused)]
+pub struct RestrictedHartreeFockOutput {
+    /// The molecular orbitals that were found in the hartree fock calculation.
+    /// These are sorted by ascending order in energy.
+    pub(crate) orbitals: MolecularOrbitals,
+    /// the basis that was used in the hartree fock calculation. This is necessary
+    /// to be able to for example evaluate the molecular orbitals that were found
+    pub(crate) basis: Vec<BasisFunction>,
+    /// the orbital energies that were found in this hartree fock calculation, sorted in
+    /// ascending order
+    pub orbital_energies: Vec<f64>,
+    /// The electronic energy of the system
+    pub electronic_energy: f64,
+    /// The nuclear repulsion energy
+    pub nuclear_repulsion: f64,
+    /// After how many iterations did the system converge
+    pub iterations: usize,
+}
+
+impl RestrictedHartreeFockOutput {
+    pub fn total_energy(&self) -> f64 {
+        self.electronic_energy + self.nuclear_repulsion
+    }
+}
+
+pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<RestrictedHartreeFockOutput> {
     // exchangable integrator
     let integrator = DefaultIntegrator::default();
 
@@ -17,7 +45,7 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOu
 
     let n_basis = basis.len();
 
-    let n_electrons = input.n_electrons();
+    let n_electrons = dbg!(input.n_alpha() + input.n_beta());
 
     let nuclear_repulsion = compute_nuclear_repulsion(&input.molecule.atoms);
     log::debug!("nulcear repulsion energy: {nuclear_repulsion}");
@@ -78,8 +106,8 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<HartreeFockOu
         if density_rms < input.epsilon {
             let electronic_energy =
                 0.5 * (&density * (2.0 * &core_hamiltonian + &electronic_hamiltonian)).trace();
-            return Some(HartreeFockOutput {
-                orbitals: MolecularOrbitals::from_coefficient_matrix(&coefficients),
+            return Some(RestrictedHartreeFockOutput {
+                orbitals: MolecularOrbitals::from_matrix(&coefficients),
                 basis,
                 orbital_energies: obrital_energies.as_slice().to_vec(),
                 electronic_energy,
@@ -213,7 +241,8 @@ mod tests {
         basis::BasisSet,
         config::ConfigBasisSet,
         hf::{
-            restricted_hartree_fock, HartreeFockInput, HartreeFockOutput, MolecularElectronConfig,
+            restricted_hartree_fock, HartreeFockInput, MolecularElectronConfig,
+            RestrictedHartreeFockOutput,
         },
     };
 
@@ -251,7 +280,7 @@ mod tests {
             epsilon: 1e-6,
         };
 
-        let HartreeFockOutput {
+        let RestrictedHartreeFockOutput {
             orbital_energies,
             electronic_energy,
             nuclear_repulsion,
@@ -287,7 +316,7 @@ mod tests {
             epsilon: 1e-6,
         };
 
-        let HartreeFockOutput {
+        let RestrictedHartreeFockOutput {
             orbital_energies,
             electronic_energy,
             nuclear_repulsion,
@@ -339,7 +368,7 @@ mod tests {
             epsilon: 1e-6,
         };
 
-        let HartreeFockOutput {
+        let RestrictedHartreeFockOutput {
             orbital_energies,
             electronic_energy,
             nuclear_repulsion,
@@ -387,7 +416,7 @@ mod tests {
             epsilon: 1e-6,
         };
 
-        let HartreeFockOutput {
+        let RestrictedHartreeFockOutput {
             orbital_energies,
             electronic_energy,
             nuclear_repulsion,
