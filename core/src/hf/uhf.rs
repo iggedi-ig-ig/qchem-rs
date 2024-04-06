@@ -50,24 +50,7 @@ pub fn unrestricted_hartree_fock(
     let integrator = DefaultIntegrator::default();
 
     // TODO: group integral terms by similar terms?
-    let basis = input
-        .molecule
-        .atoms
-        .iter()
-        .flat_map(|atom| {
-            let atomic_basis = input
-                .basis_set
-                .for_atom(atom)
-                .unwrap_or_else(|| panic!("no basis for element {:?}", atom.element_type));
-
-            atomic_basis
-                .basis_functions()
-                .map(|function_type| BasisFunction {
-                    contracted_gaussian: function_type.clone(),
-                    position: atom.position,
-                })
-        })
-        .collect::<Vec<_>>();
+    let basis = input.basis();
 
     let n_basis = basis.len();
 
@@ -90,8 +73,8 @@ pub fn unrestricted_hartree_fock(
     let core_hamiltonian = kinetic + nuclear;
     let transform = compute_transformation_matrix(&overlap);
 
-    let mut density_alpha = DMatrix::zeros(n_basis, n_basis);
-    let mut density_beta = DMatrix::zeros(n_basis, n_basis);
+    let mut density_alpha = core_hamiltonian.clone();
+    let mut density_beta = core_hamiltonian.clone();
 
     // TODO: use these again
     let mut electron_terms = vec![0.0; n_basis.pow(4)];
@@ -106,9 +89,15 @@ pub fn unrestricted_hartree_fock(
         }
     }
 
-    let mut electronic_hamiltonians = vec![DMatrix::zeros(n_basis, n_basis); 2];
-    let mut orbital_energies = vec![DVector::zeros(n_basis); 2];
-    let mut coefficient_matrices = vec![DMatrix::zeros(n_basis, n_basis); 2];
+    let mut electronic_hamiltonians = [
+        DMatrix::zeros(n_basis, n_basis),
+        DMatrix::zeros(n_basis, n_basis),
+    ];
+    let mut coefficient_matrices = [
+        DMatrix::zeros(n_basis, n_basis),
+        DMatrix::zeros(n_basis, n_basis),
+    ];
+    let mut orbital_energies = [DVector::zeros(n_basis), DVector::zeros(n_basis)];
 
     // start of scf iteration
     for iteration in 0..=input.max_iterations {
@@ -135,36 +124,17 @@ pub fn unrestricted_hartree_fock(
             orbital_energies[spin] = spin_orbital_energies;
         }
 
-        let mut density_rms = 0.0;
         // second loop, because we need the new coefficients to compute the new density matrices
+        let mut density_rms = 0.0;
         for spin in 0..=1 {
             // "main" density and "other" density
-            let (old_density, coefficients_a, coefficients_b, electrons_a, electrons_b) = match spin
-            {
-                0 => (
-                    &mut density_alpha,
-                    &coefficient_matrices[0],
-                    &coefficient_matrices[1],
-                    n_alpha,
-                    n_beta,
-                ),
-                1 => (
-                    &mut density_beta,
-                    &coefficient_matrices[1],
-                    &coefficient_matrices[0],
-                    n_beta,
-                    n_alpha,
-                ),
+            let (old_density, coefficients, electrons) = match spin {
+                0 => (&mut density_alpha, &coefficient_matrices[0], n_alpha),
+                1 => (&mut density_beta, &coefficient_matrices[1], n_beta),
                 _ => unreachable!(),
             };
 
-            let new_density = compute_updated_density(
-                coefficients_a,
-                coefficients_b,
-                n_basis,
-                electrons_a,
-                electrons_b,
-            );
+            let new_density = compute_updated_density(coefficients, n_basis, electrons);
 
             const F: f64 = 0.5;
             let density_change = &new_density - &*old_density;
@@ -182,24 +152,28 @@ pub fn unrestricted_hartree_fock(
         }
 
         if density_rms / 2.0 < input.epsilon {
-            let electronic_energy = 0.5
-                * ((&density_alpha * &core_hamiltonian).trace()
-                    + (&density_beta * &core_hamiltonian).trace()
-                    + 0.5 * (&density_alpha * &electronic_hamiltonians[0]).trace()
-                    + 0.5 * (&density_beta * &electronic_hamiltonians[1]).trace());
+            let [orbital_energies_alpha, orbital_energies_beta] =
+                orbital_energies.map(|x| x.as_slice().to_vec());
+            let [coefficieents_alpha, coefficients_beta] = coefficient_matrices;
+            let [electronic_hamiltonian_alpha, electronic_hamiltonian_beta] =
+                electronic_hamiltonians;
 
-            println!(
-                "{:0.6?} | {:0.6?}",
-                orbital_energies[0].as_slice(),
-                orbital_energies[1].as_slice()
-            );
+            let energy_alpha = 0.5
+                * (&density_alpha * (2.0 * &core_hamiltonian + electronic_hamiltonian_alpha))
+                    .trace();
+
+            let energy_beta = 0.5
+                * (&density_beta * (2.0 * &core_hamiltonian + &electronic_hamiltonian_beta))
+                    .trace();
+
+            let electronic_energy = energy_alpha + energy_beta;
 
             return Some(UnrestrictedHartreeFockOutput {
-                orbitals_alpha: MolecularOrbitals::from_matrix(&coefficient_matrices[0]),
-                orbitals_beta: MolecularOrbitals::from_matrix(&coefficient_matrices[1]),
+                orbitals_alpha: MolecularOrbitals::from_matrix(&coefficieents_alpha),
+                orbitals_beta: MolecularOrbitals::from_matrix(&coefficients_beta),
                 basis,
-                orbital_energies_alpha: orbital_energies[0].as_slice().to_vec(),
-                orbital_energies_beta: orbital_energies[1].as_slice().to_vec(),
+                orbital_energies_alpha,
+                orbital_energies_beta,
                 electronic_energy,
                 nuclear_repulsion,
                 iterations: iteration,
@@ -275,11 +249,11 @@ fn compute_electronic_hamiltonian(
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(n_basis, |i, j| {
         let mut sum = 0.0;
-        for y in 0..n_basis {
-            for x in 0..n_basis {
-                sum += 0.5 * density_one[(x, y)] * multi[(i, j, x, y)]
-                    + 0.5 * density_two[(x, y)] * multi[(i, j, x, y)]
-                    - density_one[(x, y)] * multi[(i, x, j, y)];
+        for k in 0..n_basis {
+            for l in 0..n_basis {
+                sum += density_one[(k, l)] * multi[(i, j, k, l)]
+                    + density_two[(k, l)] * multi[(i, j, k, l)]
+                    - density_one[(k, l)] * multi[(i, k, j, l)]
             }
         }
         sum
@@ -287,19 +261,14 @@ fn compute_electronic_hamiltonian(
 }
 
 fn compute_updated_density(
-    coefficients_one: &DMatrix<f64>,
-    coefficients_two: &DMatrix<f64>,
+    coefficients: &DMatrix<f64>,
     n_basis: usize,
-    n_electrons_one: usize,
-    n_electrons_two: usize,
+    n_occupied: usize,
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(n_basis, |i, j| {
         let mut sum = 0.0;
-        for k in 0..n_electrons_one {
-            sum += coefficients_one[(i, k)] * coefficients_one[(j, k)];
-        }
-        for k in 0..n_electrons_two {
-            sum += coefficients_two[(i, k)] * coefficients_two[(j, k)];
+        for k in 0..n_occupied {
+            sum += coefficients[(i, k)] * coefficients[(j, k)];
         }
         sum
     })
