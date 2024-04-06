@@ -1,7 +1,10 @@
 use core::{
     basis::BasisSet,
     config::{ConfigBasisSet, ConfigMolecule},
-    hf::{restricted_hartree_fock, HartreeFockInput, HartreeFockOutput, MolecularElectronConfig},
+    hf::{
+        restricted_hartree_fock, unrestricted_hartree_fock, HartreeFockInput,
+        MolecularElectronConfig, RestrictedHartreeFockOutput, UnrestrictedHartreeFockOutput,
+    },
     molecule::Molecule,
 };
 use std::{error::Error, fs::File, path::PathBuf};
@@ -90,7 +93,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             match hf_output {
                 Some(
-                    ref output @ HartreeFockOutput {
+                    ref output @ RestrictedHartreeFockOutput {
                         ref orbital_energies,
                         electronic_energy,
                         nuclear_repulsion,
@@ -108,14 +111,63 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         QcCommand::UnrestrictedHartreeFock {
-            basis_set: _,
-            molecule: _,
-            charge: _,
-            spin_multiplicity: _,
-            max_iterations: _,
-            epsilon: _,
+            basis_set,
+            molecule,
+            charge,
+            spin_multiplicity,
+            max_iterations,
+            epsilon,
         } => {
-            unimplemented!("Unrestricted hartree fock is not implemented yet");
+            let basis_set: ConfigBasisSet = serde_json::from_reader(File::open(basis_set)?)?;
+            let molecule: ConfigMolecule = serde_json::from_reader(File::open(molecule)?)?;
+
+            let basis_set: BasisSet = basis_set.try_into()?;
+            let molecule: Molecule = molecule.into();
+
+            let config = match (charge, spin_multiplicity) {
+                (0, 0) => MolecularElectronConfig::ClosedShell,
+                (0, _) => {
+                    return Err(
+                        "cannot have non-zero spin multiplicity for an uncharged molecule".into(),
+                    )
+                }
+                (_, 0) => {
+                    return Err("charged molecule cannot have spin multiplicity of zero".into())
+                }
+                (charge, multiplicity) => MolecularElectronConfig::OpenShell {
+                    molecular_charge: charge,
+                    spin_multiplicity: multiplicity.try_into().unwrap(),
+                },
+            };
+
+            let hf_output = unrestricted_hartree_fock(&HartreeFockInput {
+                molecule: &molecule,
+                configuration: config,
+                basis_set: &basis_set,
+                max_iterations,
+                epsilon,
+            });
+
+            match hf_output {
+                Some(
+                    ref output @ UnrestrictedHartreeFockOutput {
+                        ref orbital_energies_alpha,
+                        ref orbital_energies_beta,
+                        electronic_energy,
+                        nuclear_repulsion,
+                        iterations,
+                        ..
+                    },
+                ) => {
+                    println!("hartree fock converged after {iterations} iterations");
+                    println!("electronic energy: {electronic_energy:3.3}");
+                    println!("nuclear repulsion energy: {nuclear_repulsion:3.3}");
+                    println!("hartree fock energy: {:3.3}", output.total_energy());
+                    println!("orbital energies spin up: {orbital_energies_alpha:3.3?}");
+                    println!("orbital energies spin down: {orbital_energies_beta:3.3?}");
+                }
+                None => panic!("hartree fock did not converge"),
+            }
         }
     }
 

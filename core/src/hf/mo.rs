@@ -15,7 +15,7 @@ impl MolecularOrbitals {
     const ZERO_CUTOFF: f64 = 1e-4;
 
     /// Reconstruct the molecular orbitals from a converged coefficient matrix and a basis
-    pub(crate) fn from_coefficient_matrix(coefficient_matrix: &DMatrix<f64>) -> Self {
+    pub(crate) fn from_matrix(coefficient_matrix: &DMatrix<f64>) -> Self {
         let mut orbitals = Vec::with_capacity(coefficient_matrix.ncols());
 
         for column in coefficient_matrix.column_iter() {
