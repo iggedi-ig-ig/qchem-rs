@@ -8,7 +8,10 @@ use std::num::NonZeroU32;
 pub use rhf::{restricted_hartree_fock, RestrictedHartreeFockOutput};
 pub use uhf::{unrestricted_hartree_fock, UnrestrictedHartreeFockOutput};
 
-use crate::{basis::BasisSet, molecule::Molecule};
+use crate::{
+    basis::{BasisFunction, BasisSet},
+    molecule::Molecule,
+};
 
 /// The state of a molecule.
 pub enum MolecularElectronConfig {
