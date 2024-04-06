@@ -76,19 +76,6 @@ pub fn unrestricted_hartree_fock(
     let mut density_alpha = core_hamiltonian.clone();
     let mut density_beta = core_hamiltonian.clone();
 
-    // TODO: use these again
-    let mut electron_terms = vec![0.0; n_basis.pow(4)];
-    for j in 0..n_basis {
-        for i in 0..n_basis {
-            for x in 0..n_basis {
-                for y in 0..n_basis {
-                    electron_terms[j * n_basis.pow(3) + i * n_basis.pow(2) + y * n_basis + x] =
-                        electron[(i, j, x, y)] - 0.5 * electron[(i, x, j, y)];
-                }
-            }
-        }
-    }
-
     let mut electronic_hamiltonians = [
         DMatrix::zeros(n_basis, n_basis),
         DMatrix::zeros(n_basis, n_basis),
@@ -154,12 +141,12 @@ pub fn unrestricted_hartree_fock(
         if density_rms / 2.0 < input.epsilon {
             let [orbital_energies_alpha, orbital_energies_beta] =
                 orbital_energies.map(|x| x.as_slice().to_vec());
-            let [coefficieents_alpha, coefficients_beta] = coefficient_matrices;
+            let [coefficient_matrix_alpha, coefficient_matrix_beta] = coefficient_matrices;
             let [electronic_hamiltonian_alpha, electronic_hamiltonian_beta] =
                 electronic_hamiltonians;
 
             let energy_alpha = 0.5
-                * (&density_alpha * (2.0 * &core_hamiltonian + electronic_hamiltonian_alpha))
+                * (&density_alpha * (2.0 * &core_hamiltonian + &electronic_hamiltonian_alpha))
                     .trace();
 
             let energy_beta = 0.5
@@ -169,8 +156,8 @@ pub fn unrestricted_hartree_fock(
             let electronic_energy = energy_alpha + energy_beta;
 
             return Some(UnrestrictedHartreeFockOutput {
-                orbitals_alpha: MolecularOrbitals::from_matrix(&coefficieents_alpha),
-                orbitals_beta: MolecularOrbitals::from_matrix(&coefficients_beta),
+                orbitals_alpha: MolecularOrbitals::from_matrix(&coefficient_matrix_alpha),
+                orbitals_beta: MolecularOrbitals::from_matrix(&coefficient_matrix_beta),
                 basis,
                 orbital_energies_alpha,
                 orbital_energies_beta,
