@@ -184,21 +184,16 @@ fn compute_hückel_density(
     n_basis: usize,
     n_electrons: usize,
 ) -> DMatrix<f64> {
+    const WOFLSBERG_HELMHOLTZ: f64 = 1.75;
     let hamiltonian_eht = utils::symmetric_matrix(n_basis, |i, j| {
-        0.875 * overlap[(i, j)] * (hamiltonian[(i, i)] + hamiltonian[(j, j)])
+        WOFLSBERG_HELMHOLTZ * overlap[(i, j)] * (hamiltonian[(i, i)] + hamiltonian[(j, j)]) / 2.0
     });
 
     let transformed = &transform.transpose() * (hamiltonian_eht * transform);
     let (coeffs_prime, _orbital_energies) = utils::sorted_eigs(transformed);
     let coeffs = transform * coeffs_prime;
 
-    utils::symmetric_matrix(n_basis, |i, j| {
-        let mut sum = 0.0;
-        for k in 0..n_electrons / 2 {
-            sum += coeffs[(i, k)] * coeffs[(j, k)];
-        }
-        2.0 * sum
-    })
+    compute_updated_density(&coeffs, n_basis, n_electrons)
 }
 
 fn compute_electronic_hamiltonian(

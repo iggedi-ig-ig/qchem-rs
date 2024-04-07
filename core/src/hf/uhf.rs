@@ -73,8 +73,10 @@ pub fn unrestricted_hartree_fock(
     let core_hamiltonian = kinetic + nuclear;
     let transform = compute_transformation_matrix(&overlap);
 
-    let mut density_alpha = core_hamiltonian.clone();
-    let mut density_beta = core_hamiltonian.clone();
+    let mut density_alpha =
+        compute_hückel_density_guess(&core_hamiltonian, &overlap, &transform, n_basis, n_alpha);
+    let mut density_beta =
+        compute_hückel_density_guess(&core_hamiltonian, &overlap, &transform, n_basis, n_beta);
 
     let mut electronic_hamiltonians = [
         DMatrix::zeros(n_basis, n_basis),
@@ -123,7 +125,7 @@ pub fn unrestricted_hartree_fock(
 
             let new_density = compute_updated_density(coefficients, n_basis, electrons);
 
-            const F: f64 = 0.5;
+            const F: f64 = 0.1;
             let density_change = &new_density - &*old_density;
             *old_density += &density_change * F;
 
@@ -228,6 +230,25 @@ fn compute_transformation_matrix(overlap: &DMatrix<f64>) -> DMatrix<f64> {
     let diagonal_inv_sqrt =
         DMatrix::from_diagonal(&diagonal_matrix.map_diagonal(|f| f.sqrt().recip()));
     &u * (diagonal_inv_sqrt * &u.transpose())
+}
+
+fn compute_hückel_density_guess(
+    hamiltonian: &DMatrix<f64>,
+    overlap: &DMatrix<f64>,
+    transform: &DMatrix<f64>,
+    n_basis: usize,
+    n_occupied: usize,
+) -> DMatrix<f64> {
+    const WOFLSBERG_HELMHOLTZ: f64 = 1.75;
+    let hamiltonian_eht = utils::symmetric_matrix(n_basis, |i, j| {
+        WOFLSBERG_HELMHOLTZ * overlap[(i, j)] * (hamiltonian[(i, i)] + hamiltonian[(j, j)]) / 2.0
+    });
+
+    let transformed = &transform.transpose() * (hamiltonian_eht * transform);
+    let (coeffs_prime, _orbital_energies) = utils::sorted_eigs(transformed);
+    let coeffs = transform * coeffs_prime;
+
+    compute_updated_density(&coeffs, n_basis, n_occupied)
 }
 
 fn compute_electronic_hamiltonian(
