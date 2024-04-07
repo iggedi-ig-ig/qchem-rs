@@ -239,9 +239,9 @@ fn compute_hückel_density_guess(
     n_basis: usize,
     n_occupied: usize,
 ) -> DMatrix<f64> {
-    const WOFLSBERG_HELMHOLTZ: f64 = 1.75;
+    const WOLFSBERG_HELMHOLTZ: f64 = 1.75;
     let hamiltonian_eht = utils::symmetric_matrix(n_basis, |i, j| {
-        WOFLSBERG_HELMHOLTZ * overlap[(i, j)] * (hamiltonian[(i, i)] + hamiltonian[(j, j)]) / 2.0
+        WOLFSBERG_HELMHOLTZ * overlap[(i, j)] * (hamiltonian[(i, i)] + hamiltonian[(j, j)]) / 2.0
     });
 
     let transformed = &transform.transpose() * (hamiltonian_eht * transform);
