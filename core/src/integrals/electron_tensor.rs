@@ -83,7 +83,7 @@ impl ElectronTensor {
         // Initialize variables for computing the total number of integrals and a thread-safe
         // container for storing the resulting electron-electron repulsion integrals.
         let n_basis = basis.len();
-        let mut data = vec![None; n_basis.pow(4)];
+        let mut data = vec![0.0; n_basis.pow(4)];
 
         // compute diagonal first - we need these entries for screening
         for i in 0..n_basis {
@@ -91,12 +91,8 @@ impl ElectronTensor {
                 let index = IntegralIndex(i, j, i, j);
                 let linear = index.linear(n_basis);
 
-                let _ = data[linear].get_or_insert_with(|| {
-                    let eri_ijij =
-                        integrator.electron_repulsion((&basis[i], &basis[j], &basis[i], &basis[j]));
-                    log::trace!("diagonal electron repulsion ({i}{j}{i}{j}) = {eri_ijij}");
-                    eri_ijij
-                });
+                data[linear] =
+                    integrator.electron_repulsion((&basis[i], &basis[j], &basis[i], &basis[j]));
             }
         }
 
@@ -121,18 +117,45 @@ impl ElectronTensor {
 
         to_compute.sort_unstable_by_key(|index| index.linear(n_basis));
 
-        for index @ IntegralIndex(x, y, z, w) in to_compute {
-            let linear = index.linear(n_basis);
+        #[cfg(feature = "rayon")]
+        {
+            use rayon::iter::{ParallelBridge, ParallelIterator};
 
-            let integral =
-                integrator.electron_repulsion((&basis[x], &basis[y], &basis[z], &basis[w]));
+            to_compute
+                .chunks(512)
+                .par_bridge()
+                .map(|indices| {
+                    let mut output = Vec::with_capacity(indices.len());
+                    for index @ &IntegralIndex(x, y, z, w) in indices {
+                        let linear = index.linear(n_basis);
+                        let integral = integrator
+                            .electron_repulsion((&basis[x], &basis[y], &basis[z], &basis[w]));
 
-            log::trace!("ERI {index} = {integral:<1.3}");
-            data[linear] = Some(integral);
+                        log::trace!("ERI {index} = {integral:<1.3}");
+                        output.push((linear, integral))
+                    }
+                    output
+                })
+                .collect::<Vec<_>>() // iterators are lazy - we collect to evaluate all elements
+                .into_iter()
+                .flatten()
+                .for_each(|(index, integral)| data[index] = integral);
         }
 
+        #[cfg(not(feature = "rayon"))]
+        to_compute
+            .into_iter()
+            .for_each(|index @ IntegralIndex(x, y, z, w)| {
+                let linear = index.linear(n_basis);
+                let integral =
+                    integrator.electron_repulsion((&basis[x], &basis[y], &basis[z], &basis[w]));
+
+                log::trace!("ERI {index} = {integral:<1.3}");
+                data[linear] = integral;
+            });
+
         Self {
-            data: data.into_iter().map(Option::unwrap_or_default).collect(),
+            data,
             size: n_basis,
         }
     }
