@@ -42,10 +42,8 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<RestrictedHar
     let integrator = DefaultIntegrator::default();
 
     let basis = input.basis();
-
+    let n_electrons = input.n_electrons();
     let n_basis = basis.len();
-
-    let n_electrons = dbg!(input.n_alpha() + input.n_beta());
 
     let nuclear_repulsion = compute_nuclear_repulsion(&input.molecule.atoms);
     log::debug!("nulcear repulsion energy: {nuclear_repulsion}");
