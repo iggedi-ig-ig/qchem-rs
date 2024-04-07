@@ -132,12 +132,14 @@ pub fn unrestricted_hartree_fock(
 
             density_rms += self_rms;
 
-            log::info!(
+            log::debug!(
                 "spin {} - density rms {self_rms:03.3e}",
                 ["up", "down"][spin]
             )
         }
 
+        let density_rms = density_rms / 2.0;
+        log::info!("iteration {iteration} - density rms {density_rms:03.3e}");
         if density_rms / 2.0 < input.epsilon {
             let [orbital_energies_alpha, orbital_energies_beta] =
                 orbital_energies.map(|x| x.as_slice().to_vec());
