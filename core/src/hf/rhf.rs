@@ -1,4 +1,4 @@
-use nalgebra::DMatrix;
+use nalgebra::{DMatrix, Vector3};
 
 use crate::{
     atom::Atom,
@@ -34,6 +34,10 @@ pub struct RestrictedHartreeFockOutput {
 impl RestrictedHartreeFockOutput {
     pub fn total_energy(&self) -> f64 {
         self.electronic_energy + self.nuclear_repulsion
+    }
+
+    pub fn eval_wave(&self, positions: &[Vector3<f64>]) -> f64 {
+        self.orbitals.evaluate_wave_function(&self.basis, positions)
     }
 }
 

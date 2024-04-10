@@ -1,6 +1,9 @@
 // TODO: implement slater determinants to actually work with the wave function.
 #![allow(unused)]
-use nalgebra::{DMatrix, Vector3};
+use std::env::consts::FAMILY;
+
+use log::Record;
+use nalgebra::{DMatrix, Vector2, Vector3};
 
 use crate::basis::BasisFunction;
 
@@ -24,7 +27,6 @@ impl MolecularOrbitals {
                 .enumerate()
                 .filter(|(_, element)| element.abs() > Self::ZERO_CUTOFF)
                 .unzip::<_, _, Vec<_>, Vec<_>>();
-
             orbitals.push(MolecularOrbital {
                 basis_functions: indices,
                 coefficients: elements,
@@ -32,6 +34,24 @@ impl MolecularOrbitals {
         }
 
         Self { orbitals }
+    }
+
+    pub(crate) fn evaluate_wave_function(
+        &self,
+        basis: &[BasisFunction],
+        positions: &[Vector3<f64>],
+    ) -> f64 {
+        assert_eq!(positions.len(), self.orbitals.len());
+
+        let eval_matrix = DMatrix::from_fn(positions.len(), positions.len(), |i, j| {
+            self.evaluate_orbital(basis, j, positions[i])
+        });
+
+        (2..=positions.len())
+            .map(|i| i as f64)
+            .product::<f64>()
+            .sqrt()
+            * eval_matrix.determinant()
     }
 
     /// Evaluate the n-th lowest energy orbital at a given positon

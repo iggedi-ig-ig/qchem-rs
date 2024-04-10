@@ -43,7 +43,22 @@ pub struct BasisFunction {
 
 impl BasisFunction {
     /// Evaluate this basis function at a given position
-    pub(crate) fn evaluate(&self, _at: Vector3<f64>) -> f64 {
-        todo!("implement basis function evaluation")
+    pub(crate) fn evaluate(&self, at: Vector3<f64>) -> f64 {
+        let diff = self.position - at;
+
+        let mut sum = 0.0;
+        for primitive in &self.contracted_gaussian.0 {
+            sum += primitive.coefficient * evaluate_primitive(&primitive, diff);
+        }
+        sum
     }
+}
+
+fn evaluate_primitive(primitive: &Gaussian, diff: Vector3<f64>) -> f64 {
+    let (i, j, k) = primitive.angular;
+
+    diff.x.powi(i)
+        * diff.y.powi(j)
+        * diff.z.powi(k)
+        * f64::exp(-primitive.exponent * diff.norm_squared())
 }
