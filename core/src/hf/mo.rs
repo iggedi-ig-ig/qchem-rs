@@ -41,17 +41,13 @@ impl MolecularOrbitals {
         basis: &[BasisFunction],
         positions: &[Vector3<f64>],
     ) -> f64 {
-        assert_eq!(positions.len(), self.orbitals.len());
+        assert_eq!(positions.len(), self.orbitals.len(), "wrong number of arguments supplied");
 
         let eval_matrix = DMatrix::from_fn(positions.len(), positions.len(), |i, j| {
             self.evaluate_orbital(basis, j, positions[i])
         });
 
-        (2..=positions.len())
-            .map(|i| i as f64)
-            .product::<f64>()
-            .sqrt()
-            * eval_matrix.determinant()
+        slater_normalization(positions.len()) * eval_matrix.determinant()
     }
 
     /// Evaluate the n-th lowest energy orbital at a given positon
@@ -82,4 +78,8 @@ type BasisFunctionId = usize;
 struct MolecularOrbital {
     basis_functions: Vec<BasisFunctionId>,
     coefficients: Vec<f64>,
+}
+
+fn slater_normalization(n: usize) -> f64 {
+    (2..=n).map(|i| i as f64).product::<f64>().sqrt()
 }
