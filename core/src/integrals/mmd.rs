@@ -24,62 +24,55 @@ impl Integrator for McMurchieDavidson {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
-        match (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian) {
-            (ContractedGaussian(data_a), ContractedGaussian(data_b)) => {
-                let mut output = 0.0;
-                for (&primitive_a, &primitive_b) in itertools::iproduct!(data_a, data_b) {
-                    output += primitive_a.coefficient
-                        * primitive_b.coefficient
-                        * primitive_overlap(primitive_a, primitive_b, diff);
-                }
-                output
-            }
+        let (ContractedGaussian(data_a), ContractedGaussian(data_b)) =
+            (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian);
+
+        let mut output = 0.0;
+        for (&primitive_a, &primitive_b) in itertools::iproduct!(data_a, data_b) {
+            output += primitive_a.coefficient
+                * primitive_b.coefficient
+                * primitive_overlap(primitive_a, primitive_b, diff);
         }
+        output
     }
 
     fn kinetic(&self, functions: (&Self::Item, &Self::Item)) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
-        match (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian) {
-            (ContractedGaussian(data_a), ContractedGaussian(data_b)) => {
-                let mut output = 0.0;
-                for (&primitive_a, &primitive_b) in itertools::iproduct!(data_a, data_b) {
-                    output += primitive_a.coefficient
-                        * primitive_b.coefficient
-                        * primitive_kinetic(primitive_a, primitive_b, diff);
-                }
-                output
-            }
+        let (ContractedGaussian(data_a), ContractedGaussian(data_b)) =
+            (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian);
+        let mut output = 0.0;
+        for (&primitive_a, &primitive_b) in itertools::iproduct!(data_a, data_b) {
+            output += primitive_a.coefficient
+                * primitive_b.coefficient
+                * primitive_kinetic(primitive_a, primitive_b, diff);
         }
+        output
     }
 
     fn nuclear(&self, functions: (&Self::Item, &Self::Item), nuclei: &[Atom]) -> f64 {
         let (basis_a, basis_b) = functions;
         let diff = basis_b.position - basis_a.position;
 
-        match (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian) {
-            (ContractedGaussian(data_a), ContractedGaussian(data_b)) => {
-                let mut output = 0.0;
-                // TODO: experiment with order of iteration - maybe it's faster to iterate through nuclei in the inner-most loop
-                for (nucleus, &primitive_a, &primitive_b) in
-                    itertools::iproduct!(nuclei, data_a, data_b)
-                {
-                    let product_center = product_center(
-                        basis_a.position,
-                        primitive_a.exponent,
-                        basis_b.position,
-                        primitive_b.exponent,
-                    );
+        let (ContractedGaussian(data_a), ContractedGaussian(data_b)) =
+            (&basis_a.contracted_gaussian, &basis_b.contracted_gaussian);
+        let mut output = 0.0;
+        // TODO: experiment with order of iteration - maybe it's faster to iterate through nuclei in the inner-most loop
+        for (nucleus, &primitive_a, &primitive_b) in itertools::iproduct!(nuclei, data_a, data_b) {
+            let product_center = product_center(
+                basis_a.position,
+                primitive_a.exponent,
+                basis_b.position,
+                primitive_b.exponent,
+            );
 
-                    output += primitive_a.coefficient
-                        * primitive_b.coefficient
-                        * primitive_nuclear(primitive_a, primitive_b, diff, product_center, nucleus)
-                }
-
-                output
-            }
+            output += primitive_a.coefficient
+                * primitive_b.coefficient
+                * primitive_nuclear(primitive_a, primitive_b, diff, product_center, nucleus)
         }
+
+        output
     }
 
     fn electron_repulsion(
@@ -90,60 +83,57 @@ impl Integrator for McMurchieDavidson {
         let diff_ab = basis_b.position - basis_a.position;
         let diff_cd = basis_d.position - basis_c.position;
 
-        match (
+        let (
+            ContractedGaussian(data_a),
+            ContractedGaussian(data_b),
+            ContractedGaussian(data_c),
+            ContractedGaussian(data_d),
+        ) = (
             &basis_a.contracted_gaussian,
             &basis_b.contracted_gaussian,
             &basis_c.contracted_gaussian,
             &basis_d.contracted_gaussian,
-        ) {
-            (
-                ContractedGaussian(data_a),
-                ContractedGaussian(data_b),
-                ContractedGaussian(data_c),
-                ContractedGaussian(data_d),
-            ) => {
-                let mut output = 0.0;
-                for &primitive_a in data_a {
-                    for &primitive_b in data_b {
-                        for &primitive_c in data_c {
-                            for &primitive_d in data_d {
-                                let product_center_ab = product_center(
-                                    basis_a.position,
-                                    primitive_a.exponent,
-                                    basis_b.position,
-                                    primitive_b.exponent,
-                                );
+        );
+        let mut output = 0.0;
+        for &primitive_a in data_a {
+            for &primitive_b in data_b {
+                for &primitive_c in data_c {
+                    for &primitive_d in data_d {
+                        let product_center_ab = product_center(
+                            basis_a.position,
+                            primitive_a.exponent,
+                            basis_b.position,
+                            primitive_b.exponent,
+                        );
 
-                                let product_center_cd = product_center(
-                                    basis_c.position,
-                                    primitive_c.exponent,
-                                    basis_d.position,
-                                    primitive_d.exponent,
-                                );
+                        let product_center_cd = product_center(
+                            basis_c.position,
+                            primitive_c.exponent,
+                            basis_d.position,
+                            primitive_d.exponent,
+                        );
 
-                                let diff_product = product_center_cd - product_center_ab;
+                        let diff_product = product_center_cd - product_center_ab;
 
-                                output += primitive_a.coefficient
-                                    * primitive_b.coefficient
-                                    * primitive_c.coefficient
-                                    * primitive_d.coefficient
-                                    * primitive_electron(
-                                        primitive_a,
-                                        primitive_b,
-                                        primitive_c,
-                                        primitive_d,
-                                        diff_ab,
-                                        diff_cd,
-                                        diff_product,
-                                    )
-                            }
-                        }
+                        output += primitive_a.coefficient
+                            * primitive_b.coefficient
+                            * primitive_c.coefficient
+                            * primitive_d.coefficient
+                            * primitive_electron(
+                                primitive_a,
+                                primitive_b,
+                                primitive_c,
+                                primitive_d,
+                                diff_ab,
+                                diff_cd,
+                                diff_product,
+                            )
                     }
                 }
-
-                output
             }
         }
+
+        output
     }
 }
 
