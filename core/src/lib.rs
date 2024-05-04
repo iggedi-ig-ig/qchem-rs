@@ -1,6 +1,7 @@
 pub mod atom;
 pub mod basis;
 pub mod config;
+pub(crate) mod diis;
 pub mod hf;
 pub mod integrals;
 pub mod molecule;

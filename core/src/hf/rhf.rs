@@ -3,6 +3,7 @@ use nalgebra::{DMatrix, Vector3};
 use crate::{
     atom::Atom,
     basis::BasisFunction,
+    diis::Diis,
     hf::mo::MolecularOrbitals,
     integrals::{DefaultIntegrator, ElectronTensor, Integrator},
 };
@@ -79,19 +80,22 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<RestrictedHar
     }
 
     // start of scf iteration
+    let mut diis = Diis::new();
     for iteration in 0..=input.max_iterations {
         let electronic_hamiltonian =
             compute_electronic_hamiltonian(&density, &electron_terms, n_basis);
 
         let fock = &core_hamiltonian + &electronic_hamiltonian;
+        let error = &fock * &density * &overlap - &overlap * &density * &fock;
 
+        let fock = diis.fock(error, fock).expect("DIIS failed");
         let transformed_fock = &transform.transpose() * (&fock * &transform);
         let (transformed_coefficients, obrital_energies) = utils::sorted_eigs(transformed_fock);
         let coefficients = &transform * &transformed_coefficients;
 
         let new_density = compute_updated_density(&coefficients, n_basis, n_electrons);
 
-        const F: f64 = 0.5;
+        const F: f64 = 1.0;
         let density_change = new_density - &density;
         density += &density_change * F;
 

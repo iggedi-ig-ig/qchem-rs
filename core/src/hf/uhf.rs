@@ -3,6 +3,7 @@ use nalgebra::{DMatrix, DVector};
 use crate::{
     atom::Atom,
     basis::BasisFunction,
+    diis::Diis,
     hf::mo::MolecularOrbitals,
     integrals::{DefaultIntegrator, ElectronTensor, Integrator},
 };
@@ -89,6 +90,8 @@ pub fn unrestricted_hartree_fock(
     let mut orbital_energies = [DVector::zeros(n_basis), DVector::zeros(n_basis)];
 
     // start of scf iteration
+    let mut diis = [Diis::new(), Diis::new()];
+
     for iteration in 0..=input.max_iterations {
         for spin in 0..=1 {
             // "main" density and "other" density
@@ -97,11 +100,17 @@ pub fn unrestricted_hartree_fock(
                 1 => (&mut density_beta, &density_alpha),
                 _ => unreachable!(),
             };
+            let diis = &mut diis[spin];
 
             let electronic_hamiltonian =
                 compute_electronic_hamiltonian(&density_one, &density_two, &electron, n_basis);
 
             let fock = &core_hamiltonian + &electronic_hamiltonian;
+            let error = &overlap * &fock * &*density_one - &*density_one * &fock * &overlap;
+            let fock = diis
+                .fock(error, fock)
+                .unwrap_or_else(|| panic!("DIIS failed in spin {spin}"));
+
             electronic_hamiltonians[spin] = electronic_hamiltonian;
 
             let transformed_fock = &transform.transpose() * (&fock * &transform);
