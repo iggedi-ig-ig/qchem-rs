@@ -41,7 +41,11 @@ impl MolecularOrbitals {
         basis: &[BasisFunction],
         positions: &[Vector3<f64>],
     ) -> f64 {
-        assert_eq!(positions.len(), self.orbitals.len(), "wrong number of arguments supplied");
+        assert_eq!(
+            positions.len(),
+            self.orbitals.len(),
+            "wrong number of arguments supplied"
+        );
 
         let eval_matrix = DMatrix::from_fn(positions.len(), positions.len(), |i, j| {
             self.evaluate_orbital(basis, j, positions[i])

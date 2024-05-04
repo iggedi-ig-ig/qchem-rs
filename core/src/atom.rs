@@ -10,7 +10,7 @@ pub struct Atom {
 }
 
 impl Atom {
-    /// Returns the charge of this nucleus 
+    /// Returns the charge of this nucleus
     pub fn nuclear_charge(&self) -> i32 {
         self.element_type as i32
     }
