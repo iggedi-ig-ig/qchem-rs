@@ -1,17 +1,17 @@
 use nalgebra::{DMatrix, DVector};
 use std::collections::VecDeque;
 
-struct Sample<T> {
-    error: T,
-    vector: T,
+struct Sample {
+    error: DMatrix<f64>,
+    fock: DMatrix<f64>,
 }
 
-pub(crate) struct Diis<T> {
+pub(crate) struct Diis {
     /// (Error, Vector)
-    previous_samples: VecDeque<Sample<T>>,
+    previous_samples: VecDeque<Sample>,
 }
 
-impl Diis<DMatrix<f64>> {
+impl Diis {
     pub fn new() -> Self {
         Self {
             previous_samples: VecDeque::new(),
@@ -19,8 +19,8 @@ impl Diis<DMatrix<f64>> {
     }
 
     /// _should_ not return None
-    pub fn fock(&mut self, error: DMatrix<f64>, vector: DMatrix<f64>) -> Option<DMatrix<f64>> {
-        self.previous_samples.push_front(Sample { error, vector });
+    pub fn fock(&mut self, error: DMatrix<f64>, fock: DMatrix<f64>) -> Option<DMatrix<f64>> {
+        self.previous_samples.push_front(Sample { error, fock });
         self.previous_samples.truncate(12);
 
         let n = self.previous_samples.len();
@@ -28,7 +28,7 @@ impl Diis<DMatrix<f64>> {
             return self
                 .previous_samples
                 .front()
-                .map(|Sample { vector, .. }| vector.to_owned());
+                .map(|Sample { fock, .. }| fock.to_owned());
         }
 
         let matrix = DMatrix::from_fn(n + 1, n + 1, |i, j| match (i, j) {
@@ -49,7 +49,7 @@ impl Diis<DMatrix<f64>> {
                 .iter()
                 .enumerate()
                 .take(n)
-                .map(|(i, &x)| x * &self.previous_samples[i].vector)
+                .map(|(i, &x)| x * &self.previous_samples[i].fock)
                 .sum(),
         )
     }

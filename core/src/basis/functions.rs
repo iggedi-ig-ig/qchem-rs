@@ -48,7 +48,7 @@ impl BasisFunction {
 
         let mut sum = 0.0;
         for primitive in &self.contracted_gaussian.0 {
-            sum += primitive.coefficient * evaluate_primitive(&primitive, diff);
+            sum += primitive.coefficient * evaluate_primitive(primitive, diff);
         }
         sum
     }

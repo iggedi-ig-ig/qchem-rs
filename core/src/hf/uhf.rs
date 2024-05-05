@@ -103,7 +103,7 @@ pub fn unrestricted_hartree_fock(
             let diis = &mut diis[spin];
 
             let electronic_hamiltonian =
-                compute_electronic_hamiltonian(&density_one, &density_two, &electron, n_basis);
+                compute_electronic_hamiltonian(density_one, density_two, &electron, n_basis);
 
             let fock = &core_hamiltonian + &electronic_hamiltonian;
             let error = &overlap * &fock * &*density_one - &*density_one * &fock * &overlap;
