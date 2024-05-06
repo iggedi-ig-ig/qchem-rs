@@ -37,13 +37,13 @@ impl Diis {
         }
         let matrix = utils::symmetric_matrix(n + 1, |i, j| match (i, j) {
             (i, j) if i == n && j == n => 0.0,
-            (i, j) if i == n || j == n => -1.0,
+            (i, j) if i == n || j == n => 1.0,
             (i, j) => self.previous_samples[i]
                 .error
                 .dot(&self.previous_samples[j].error),
         });
 
-        let b = DVector::from_fn(n + 1, |i, _| if i == n { -1.0 } else { 0.0 });
+        let b = DVector::from_fn(n + 1, |i, _| if i == n { 1.0 } else { 0.0 });
 
         let qr = matrix.qr();
         let solution = qr.solve(&b)?;
