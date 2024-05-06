@@ -3,7 +3,8 @@ use std::collections::VecDeque;
 use nalgebra::{DMatrix, DVector, SymmetricEigen};
 
 #[inline(always)]
-pub(super) fn symmetric_matrix(
+/// Create a symmetric, square matrix. Function is only run for upper triangle of the matrix
+pub(crate) fn symmetric_matrix(
     n: usize,
     mut func: impl FnMut(usize, usize) -> f64,
 ) -> DMatrix<f64> {
