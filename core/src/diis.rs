@@ -33,14 +33,13 @@ impl Diis {
 
         let matrix = DMatrix::from_fn(n + 1, n + 1, |i, j| match (i, j) {
             (i, j) if i == n && j == n => 0.0,
-            (i, j) if i == n || j == n => -1.0,
-            _ => self.previous_samples[i]
+            (i, j) if i == n || j == n => 1.0,
+            _ => self.previous_samples[j]
                 .error
-                .dot(&self.previous_samples[j].error),
+                .dot(&self.previous_samples[i].error),
         });
 
-        let mut b = DVector::zeros(n + 1);
-        b[(n, 0)] = -1.0;
+        let b = DVector::from_fn(n + 1, |i, _| if i == n { 1.0 } else { 0.0 });
 
         let qr = matrix.qr();
         let solution = qr.solve(&b)?;
