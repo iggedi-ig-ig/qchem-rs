@@ -106,7 +106,7 @@ pub fn unrestricted_hartree_fock(
                 compute_electronic_hamiltonian(density_one, density_two, &electron, n_basis);
 
             let fock = &core_hamiltonian + &electronic_hamiltonian;
-            let error = &overlap * &fock * &*density_one - &*density_one * &fock * &overlap;
+            let error = &fock * &*density_one * &overlap - &overlap * &*density_one * &fock;
             let fock = diis
                 .fock(error, fock)
                 .unwrap_or_else(|| panic!("DIIS failed in spin {spin}"));
@@ -134,7 +134,7 @@ pub fn unrestricted_hartree_fock(
 
             let new_density = compute_updated_density(coefficients, n_basis, electrons);
 
-            const F: f64 = 0.1;
+            const F: f64 = 1.0;
             let density_change = &new_density - &*old_density;
             *old_density += &density_change * F;
 
