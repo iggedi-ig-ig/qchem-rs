@@ -3,6 +3,7 @@
 //!
 //! [1] Goings, J. Integrals. https://joshuagoings.com/2017/04/28/integrals/
 use nalgebra::Vector3;
+use smallvec::SmallVec;
 
 use crate::{
     atom::Atom,
@@ -246,6 +247,26 @@ fn primitive_electron(
     let q = c + d;
     let alpha = p * q / (p + q);
 
+    const N: usize = 4;
+    let e1s: SmallVec<[_; N]> = (0..=l1 + l2)
+        .map(|k| hermite_expansion([l1, l2, k], diff_ab.x, a, b))
+        .collect();
+    let e2s: SmallVec<[_; N]> = (0..=m1 + m2)
+        .map(|k| hermite_expansion([m1, m2, k], diff_ab.y, a, b))
+        .collect();
+    let e3s: SmallVec<[_; N]> = (0..=n1 + n2)
+        .map(|k| hermite_expansion([n1, n2, k], diff_ab.z, a, b))
+        .collect();
+    let e4s: SmallVec<[_; N]> = (0..=l3 + l4)
+        .map(|k| hermite_expansion([l3, l4, k], diff_cd.x, c, d))
+        .collect();
+    let e5s: SmallVec<[_; N]> = (0..=m3 + m4)
+        .map(|k| hermite_expansion([m3, m4, k], diff_cd.y, c, d))
+        .collect();
+    let e6s: SmallVec<[_; N]> = (0..=n3 + n4)
+        .map(|k| hermite_expansion([n3, n4, k], diff_cd.z, c, d))
+        .collect();
+
     let mut sum = 0.0;
     for t1 in 0..=l1 + l2 {
         for u1 in 0..=m1 + m2 {
@@ -253,19 +274,12 @@ fn primitive_electron(
                 for t2 in 0..=l3 + l4 {
                     for u2 in 0..=m3 + m4 {
                         for v2 in 0..=n3 + n4 {
-                            let e1 = hermite_expansion([l1, l2, t1], diff_ab.x, a, b);
-                            let e2 = hermite_expansion([m1, m2, u1], diff_ab.y, a, b);
-                            let e3 = hermite_expansion([n1, n2, v1], diff_ab.z, a, b);
-                            let e4 = hermite_expansion([l3, l4, t2], diff_cd.x, c, d);
-                            let e5 = hermite_expansion([m3, m4, u2], diff_cd.y, c, d);
-                            let e6 = hermite_expansion([n3, n4, v2], diff_cd.z, c, d);
-
-                            sum += e1
-                                * e2
-                                * e3
-                                * e4
-                                * e5
-                                * e6
+                            sum += e1s[t1 as usize]
+                                * e2s[u1 as usize]
+                                * e3s[v1 as usize]
+                                * e4s[t2 as usize]
+                                * e5s[u2 as usize]
+                                * e6s[v2 as usize]
                                 * coulomb_auxiliary(
                                     t1 + t2,
                                     u1 + u2,
@@ -275,7 +289,6 @@ fn primitive_electron(
                                     diff_product,
                                 )
                                 * if (t2 + u2 + v2) % 2 == 0 { 1.0 } else { -1.0 }
-                            // (-1)^(t2 + u2 + v2)
                         }
                     }
                 }
