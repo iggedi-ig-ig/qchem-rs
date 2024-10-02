@@ -51,16 +51,10 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<RestrictedHar
     let n_basis = basis.len();
 
     let nuclear_repulsion = compute_nuclear_repulsion(&input.molecule.atoms);
-    log::debug!("nulcear repulsion energy: {nuclear_repulsion}");
 
-    // TODO: do we need to pre-calculate all of the integrals? I don't think, for example, all ERI integrals are actually used.
-    //  if we could skip some of them, that would be a huge performance gain.
     let overlap = compute_overlap_matrix(&basis, &integrator);
-    log::debug!("overlap matrix: {overlap:0.4}");
     let kinetic = compute_kinetic_matrix(&basis, &integrator);
-    log::debug!("kinetic matrix: {overlap:0.4}");
     let nuclear = compute_nuclear_matrix(&basis, &input.molecule.atoms, &integrator);
-    log::debug!("nuclear matrix: {overlap:0.4}");
     let electron = ElectronTensor::from_basis(&basis, &integrator);
 
     let core_hamiltonian = kinetic + nuclear;
@@ -137,6 +131,7 @@ fn compute_nuclear_repulsion(atoms: &[Atom]) -> f64 {
                 / (atoms[atom_b].position - atoms[atom_a].position).norm()
         }
     }
+    log::debug!("nulcear repulsion energy: {potential}");
     potential
 }
 
@@ -144,22 +139,26 @@ pub fn compute_overlap_matrix(
     basis: &[BasisFunction],
     integrator: &impl Integrator<Item = BasisFunction>,
 ) -> DMatrix<f64> {
-    utils::symmetric_matrix(basis.len(), |i, j| {
+    let overlap = utils::symmetric_matrix(basis.len(), |i, j| {
         let overlap_ij = integrator.overlap((&basis[i], &basis[j]));
         log::trace!("overlap ({i}{j}) = {overlap_ij}");
         overlap_ij
-    })
+    });
+    log::debug!("overlap matrix: {overlap:0.4}");
+    overlap
 }
 
 pub fn compute_kinetic_matrix(
     basis: &[BasisFunction],
     integrator: &impl Integrator<Item = BasisFunction>,
 ) -> DMatrix<f64> {
-    utils::symmetric_matrix(basis.len(), |i, j| {
+    let kinetic = utils::symmetric_matrix(basis.len(), |i, j| {
         let kinetic_ij = integrator.kinetic((&basis[i], &basis[j]));
         log::trace!("kinetic ({i}{j}) = {kinetic_ij}");
         kinetic_ij
-    })
+    });
+    log::debug!("kinetic matrix: {kinetic:0.4}");
+    kinetic
 }
 
 pub fn compute_nuclear_matrix(
@@ -167,11 +166,13 @@ pub fn compute_nuclear_matrix(
     nuclei: &[Atom],
     integrator: &impl Integrator<Item = BasisFunction>,
 ) -> DMatrix<f64> {
-    utils::symmetric_matrix(basis.len(), |i, j| {
+    let nuclear = utils::symmetric_matrix(basis.len(), |i, j| {
         let nuclear_ij = integrator.nuclear((&basis[i], &basis[j]), nuclei);
         log::trace!("nuclear ({i}{j}) = {nuclear_ij}");
         nuclear_ij
-    })
+    });
+    log::debug!("nuclear matrix: {nuclear:0.4}");
+    nuclear
 }
 
 fn compute_transformation_matrix(overlap: &DMatrix<f64>) -> DMatrix<f64> {
