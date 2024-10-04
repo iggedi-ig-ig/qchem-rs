@@ -150,7 +150,7 @@ impl ElectronTensor {
                 let integral =
                     integrator.electron_repulsion((&basis[x], &basis[y], &basis[z], &basis[w]));
 
-                log::trace!("ERI {index} = {integral:<1.3}");
+                log::trace!("ERI {index} = {integral:<1.8}");
                 data[linear] = integral;
             });
 

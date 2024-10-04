@@ -144,7 +144,7 @@ pub fn compute_overlap_matrix(
         log::trace!("overlap ({i}{j}) = {overlap_ij}");
         overlap_ij
     });
-    log::debug!("overlap matrix: {overlap:0.4}");
+    log::debug!("overlap matrix: {:0.4}", overlap);
     overlap
 }
 
@@ -157,7 +157,7 @@ pub fn compute_kinetic_matrix(
         log::trace!("kinetic ({i}{j}) = {kinetic_ij}");
         kinetic_ij
     });
-    log::debug!("kinetic matrix: {kinetic:0.4}");
+    log::debug!("kinetic matrix: {:0.4}", kinetic);
     kinetic
 }
 
@@ -171,7 +171,7 @@ pub fn compute_nuclear_matrix(
         log::trace!("nuclear ({i}{j}) = {nuclear_ij}");
         nuclear_ij
     });
-    log::debug!("nuclear matrix: {nuclear:0.4}");
+    log::debug!("nuclear matrix: {:0.4}", nuclear);
     nuclear
 }
 

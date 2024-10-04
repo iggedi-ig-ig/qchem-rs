@@ -66,9 +66,9 @@ pub fn unrestricted_hartree_fock(
     let overlap = compute_overlap_matrix(&basis, &integrator);
     log::debug!("overlap matrix: {overlap:0.4}");
     let kinetic = compute_kinetic_matrix(&basis, &integrator);
-    log::debug!("kinetic matrix: {overlap:0.4}");
+    log::debug!("kinetic matrix: {kinetic:0.4}");
     let nuclear = compute_nuclear_matrix(&basis, &input.molecule.atoms, &integrator);
-    log::debug!("nuclear matrix: {overlap:0.4}");
+    log::debug!("nuclear matrix: {nuclear:0.4}");
     let electron = ElectronTensor::from_basis(&basis, &integrator);
 
     let core_hamiltonian = kinetic + nuclear;
