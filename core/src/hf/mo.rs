@@ -5,8 +5,7 @@ use std::env::consts::FAMILY;
 use log::Record;
 use nalgebra::{DMatrix, Vector2, Vector3};
 
-use crate::basis::BasisFunction;
-
+use molint::basis::ContractedGaussian;
 /// Represents the molecular orbitals of a hartree fock calculation
 #[derive(Debug)]
 pub(crate) struct MolecularOrbitals {
@@ -34,45 +33,6 @@ impl MolecularOrbitals {
         }
 
         Self { orbitals }
-    }
-
-    pub(crate) fn evaluate_wave_function(
-        &self,
-        basis: &[BasisFunction],
-        positions: &[Vector3<f64>],
-    ) -> f64 {
-        assert_eq!(
-            positions.len(),
-            self.orbitals.len(),
-            "wrong number of arguments supplied"
-        );
-
-        let eval_matrix = DMatrix::from_fn(positions.len(), positions.len(), |i, j| {
-            self.evaluate_orbital(basis, j, positions[i])
-        });
-
-        slater_normalization(positions.len()) * eval_matrix.determinant()
-    }
-
-    /// Evaluate the n-th lowest energy orbital at a given positon
-    pub(crate) fn evaluate_orbital(
-        &self,
-        basis: &[BasisFunction],
-        orbital: usize,
-        position: Vector3<f64>,
-    ) -> f64 {
-        let MolecularOrbital {
-            ref basis_functions,
-            ref coefficients,
-        } = self.orbitals[orbital];
-
-        let mut output = 0.0;
-
-        for (&basis_function_index, &coeff) in basis_functions.iter().zip(coefficients) {
-            output += coeff * basis[basis_function_index].evaluate(position);
-        }
-
-        output
     }
 }
 

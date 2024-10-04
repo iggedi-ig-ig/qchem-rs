@@ -11,6 +11,7 @@ opt-level = 3
 nalgebra = { version = "0.33", features = ["serde-serialize"] }
 smallvec = { version = "1.13.1", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
+molint = { path = "../molint" }
 serde_json = "1.0.114"
 itertools = "0.12.1"
 rand = "0.8.5"

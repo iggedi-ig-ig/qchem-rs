@@ -1,17 +1,11 @@
 mod mo;
 pub mod rhf;
-mod uhf;
 pub(super) mod utils;
 
 use std::num::NonZeroU32;
 
+use molint::system::MolecularSystem;
 pub use rhf::{restricted_hartree_fock, RestrictedHartreeFockOutput};
-pub use uhf::{unrestricted_hartree_fock, UnrestrictedHartreeFockOutput};
-
-use crate::{
-    basis::{BasisFunction, BasisSet},
-    molecule::Molecule,
-};
 
 /// The state of a molecule.
 pub enum MolecularElectronConfig {
@@ -25,11 +19,9 @@ pub enum MolecularElectronConfig {
 /// The input to a hartree fock calculation
 pub struct HartreeFockInput<'a> {
     /// the molecule to run hartree fock for
-    pub molecule: &'a Molecule,
+    pub system: MolecularSystem<'a>,
     /// the concfiguration of the molecule
     pub configuration: MolecularElectronConfig,
-    /// what basis set to use
-    pub basis_set: &'a BasisSet,
     /// the maximum number of iterations to try
     pub max_iterations: usize,
     /// the smallest number that isn't treated as zero. For example, if the density
@@ -38,34 +30,13 @@ pub struct HartreeFockInput<'a> {
 }
 
 impl HartreeFockInput<'_> {
-    pub(crate) fn basis(&self) -> Vec<BasisFunction> {
-        // TODO: group integral terms by similar terms?
-        self.molecule
-            .atoms
-            .iter()
-            .flat_map(|atom| {
-                let atomic_basis = self
-                    .basis_set
-                    .for_atom(atom)
-                    .unwrap_or_else(|| panic!("no basis for element {:?}", atom.element_type));
-
-                atomic_basis
-                    .basis_functions()
-                    .map(|function_type| BasisFunction {
-                        contracted_gaussian: function_type.clone(),
-                        position: atom.position,
-                    })
-            })
-            .collect::<Vec<_>>()
-    }
-
     /// Returns the number of total electrons in the system
     pub(crate) fn n_electrons(&self) -> usize {
         let base_electron_count = self
-            .molecule
+            .system
             .atoms
             .iter()
-            .map(|atom| atom.element_type as usize)
+            .map(|atom| atom.ordinal)
             .sum::<usize>();
 
         match self.configuration {

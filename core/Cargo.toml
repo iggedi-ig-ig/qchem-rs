@@ -11,6 +11,7 @@ serde_json = { workspace = true }
 itertools = { workspace = true }
 nalgebra = { workspace = true }
 smallvec = { workspace = true }
+molint = { workspace = true }
 serde = { workspace = true }
 log = { workspace = true }
 boys = "0.1.0"
