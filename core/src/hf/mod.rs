@@ -46,36 +46,4 @@ impl HartreeFockInput<'_> {
             } => base_electron_count.saturating_add_signed(-molecular_charge as isize),
         }
     }
-
-    /// Returns the number of electrons in the alpha (by convention, spin up) state
-    pub(crate) fn n_alpha(&self) -> usize {
-        match self.configuration {
-            MolecularElectronConfig::ClosedShell => self.n_electrons() / 2,
-            MolecularElectronConfig::OpenShell {
-                spin_multiplicity, ..
-            } => {
-                (self
-                    .n_electrons()
-                    .saturating_sub(spin_multiplicity.get() as usize)
-                    + 1)
-                    / 2
-            }
-        }
-    }
-
-    /// Returns the number of electrons in the beta (by convention, spin down) state
-    pub(crate) fn n_beta(&self) -> usize {
-        match self.configuration {
-            MolecularElectronConfig::ClosedShell => self.n_electrons() / 2,
-            MolecularElectronConfig::OpenShell {
-                spin_multiplicity, ..
-            } => {
-                (self
-                    .n_electrons()
-                    .saturating_add(spin_multiplicity.get() as usize)
-                    - 1)
-                    / 2
-            }
-        }
-    }
 }

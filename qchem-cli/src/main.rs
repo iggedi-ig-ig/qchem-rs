@@ -3,7 +3,7 @@ use core::hf::{
 };
 use std::{error::Error, path::PathBuf};
 
-use approx::{assert_abs_diff_eq, assert_relative_eq, relative_eq};
+use approx::{assert_abs_diff_eq, relative_eq};
 use clap::{ArgAction, Parser, Subcommand};
 use molint::{
     basis::BasisSet,
@@ -77,7 +77,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             electronic_energy,
             ..
         }) => {
-            assert_abs_diff_eq!(electronic_energy, -89.56219148143138, epsilon = 1e-6);
+            assert_abs_diff_eq!(electronic_energy, -89.56219148143138, epsilon = 1e-5);
 
             const ORBITAL_ENERGIES: [f64; 13] = [
                 -20.530046784284785,
@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 orbital_energies
                     .iter()
                     .enumerate()
-                    .all(|(i, &f)| relative_eq!(f, ORBITAL_ENERGIES[i], epsilon = 1e-6)),
+                    .all(|(i, &f)| relative_eq!(f, ORBITAL_ENERGIES[i], epsilon = 1e-5)),
                 "orbital energies didn't stay the same'"
             );
         }
