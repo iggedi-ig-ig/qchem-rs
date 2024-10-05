@@ -63,7 +63,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         ],
         &basis_set,
     );
-
     let hf_output = restricted_hartree_fock(&HartreeFockInput {
         system: molecule,
         configuration: MolecularElectronConfig::ClosedShell,

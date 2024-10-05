@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use molint::system::Atom;
 use nalgebra::DMatrix;
 
@@ -42,7 +44,9 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<RestrictedHar
     let kinetic = utils::symmetric_matrix(n_basis, |i, j| kinetic[(i, j)]);
     let nuclear = molint::nuclear(&input.system);
     let nuclear = utils::symmetric_matrix(n_basis, |i, j| nuclear[(i, j)]);
+    let start = Instant::now();
     let electron = molint::eri(&input.system);
+    log::info!("ERI calculation took {:?}", start.elapsed());
 
     let core_hamiltonian = kinetic + nuclear;
     let transform = compute_transformation_matrix(&overlap);
@@ -54,17 +58,91 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<RestrictedHar
         n_electrons,
     );
 
-    let mut electron_terms = vec![0.0; n_basis.pow(4)];
-    for (j, i, x, y) in itertools::iproduct!(0..n_basis, 0..n_basis, 0..n_basis, 0..n_basis) {
-        electron_terms[j * n_basis.pow(3) + i * n_basis.pow(2) + y * n_basis + x] =
-            electron[(i, j, x, y)] - 0.5 * electron[(i, x, j, y)];
+    let mut eri_terms = vec![0.0; n_basis.pow(4)];
+    for (i, j, k, l) in itertools::iproduct!(0..n_basis, 0..n_basis, 0..n_basis, 0..n_basis) {
+        let ijkl @ (a, b, c, d) = match (i, j, k, l) {
+            // Dynamically calculate ij and kl after reordering
+            (i, j, k, l) if i <= j && k <= l && (i * (i + 1) / 2 + j) <= (k * (k + 1) / 2 + l) => {
+                (i, j, k, l)
+            }
+            (i, j, k, l) if i > j && k <= l && (j * (j + 1) / 2 + i) <= (k * (k + 1) / 2 + l) => {
+                (j, i, k, l)
+            }
+            (i, j, k, l) if i <= j && k > l && (i * (i + 1) / 2 + j) <= (l * (l + 1) / 2 + k) => {
+                (i, j, l, k)
+            }
+            (i, j, k, l) if i > j && k > l && (j * (j + 1) / 2 + i) <= (l * (l + 1) / 2 + k) => {
+                (j, i, l, k)
+            }
+
+            // In cases where ij > kl, swap them accordingly
+            (i, j, k, l) if i <= j && k <= l && (i * (i + 1) / 2 + j) > (k * (k + 1) / 2 + l) => {
+                (k, l, i, j)
+            }
+            (i, j, k, l) if i > j && k <= l && (j * (j + 1) / 2 + i) > (k * (k + 1) / 2 + l) => {
+                (k, l, j, i)
+            }
+            (i, j, k, l) if i <= j && k > l && (i * (i + 1) / 2 + j) > (l * (l + 1) / 2 + k) => {
+                (l, k, i, j)
+            }
+            (i, j, k, l) if i > j && k > l && (j * (j + 1) / 2 + i) > (l * (l + 1) / 2 + k) => {
+                (l, k, j, i)
+            }
+
+            // This is unreachable under normal logic
+            _ => unreachable!(),
+        };
+        assert!(
+            a <= b && c <= d && a * (a + 1) / 2 + b <= c * (c + 1) / 2 + d,
+            "symmetry is broken in ijkl"
+        );
+
+        let ikjl @ (a, b, c, d) = match (i, k, j, l) {
+            // Recalculate ik and jl dynamically after reordering
+            (i, k, j, l) if i <= k && j <= l && (i * (i + 1) / 2 + k) <= (j * (j + 1) / 2 + l) => {
+                (i, k, j, l)
+            }
+            (i, k, j, l) if i > k && j <= l && (k * (k + 1) / 2 + i) <= (j * (j + 1) / 2 + l) => {
+                (k, i, j, l)
+            }
+            (i, k, j, l) if i <= k && j > l && (i * (i + 1) / 2 + k) <= (l * (l + 1) / 2 + j) => {
+                (i, k, l, j)
+            }
+            (i, k, j, l) if i > k && j > l && (k * (k + 1) / 2 + i) <= (l * (l + 1) / 2 + j) => {
+                (k, i, l, j)
+            }
+
+            // In cases where ik > jl, swap them accordingly
+            (i, k, j, l) if i <= k && j <= l && (i * (i + 1) / 2 + k) > (j * (j + 1) / 2 + l) => {
+                (j, l, i, k)
+            }
+            (i, k, j, l) if i > k && j <= l && (k * (k + 1) / 2 + i) > (j * (j + 1) / 2 + l) => {
+                (j, l, k, i)
+            }
+            (i, k, j, l) if i <= k && j > l && (i * (i + 1) / 2 + k) > (l * (l + 1) / 2 + j) => {
+                (l, j, i, k)
+            }
+            (i, k, j, l) if i > k && j > l && (k * (k + 1) / 2 + i) > (l * (l + 1) / 2 + j) => {
+                (l, j, k, i)
+            }
+
+            // This is unreachable under normal logic
+            _ => unreachable!(),
+        };
+
+        assert!(
+            a <= b && c <= d && a * (a + 1) / 2 + b <= c * (c + 1) / 2 + d,
+            "symmetry is broken in ikjl"
+        );
+
+        eri_terms[i * n_basis.pow(3) + j * n_basis.pow(2) + k * n_basis + l] =
+            electron[ijkl] - 0.5 * electron[ikjl];
     }
 
     // start of scf iteration
     let mut diis = Diis::new();
     for iteration in 0..=input.max_iterations {
-        let electronic_hamiltonian =
-            compute_electronic_hamiltonian(&density, &electron_terms, n_basis);
+        let electronic_hamiltonian = compute_electronic_hamiltonian(&density, &eri_terms, n_basis);
 
         let fock = &core_hamiltonian + &electronic_hamiltonian;
         let error = &fock * &density * &overlap - &overlap * &density * &fock;
