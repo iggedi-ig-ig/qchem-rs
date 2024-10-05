@@ -58,11 +58,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                 &[
                     Atom {
                         ordinal: 1,
-                        position: Point3::origin(),
+                        position: Point3::new(0.4175, 0.0, 0.83),
+                    },
+                    Atom {
+                        ordinal: 8,
+                        position: Point3::new(0.0, 0.0, -0.31),
                     },
                     Atom {
                         ordinal: 1,
-                        position: Point3::new(0.0, 0.0, 1.4),
+                        position: Point3::new(-0.4175, 0.0, 0.83),
                     },
                 ],
                 &basis_set,

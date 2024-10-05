@@ -37,8 +37,11 @@ pub fn restricted_hartree_fock(input: &HartreeFockInput) -> Option<RestrictedHar
     let nuclear_repulsion = compute_nuclear_repulsion(&input.system.atoms);
 
     let overlap = molint::overlap(&input.system);
+    let overlap = utils::symmetric_matrix(n_basis, |i, j| overlap[(i, j)]);
     let kinetic = molint::kinetic(&input.system);
+    let kinetic = utils::symmetric_matrix(n_basis, |i, j| kinetic[(i, j)]);
     let nuclear = molint::nuclear(&input.system);
+    let nuclear = utils::symmetric_matrix(n_basis, |i, j| nuclear[(i, j)]);
     let electron = molint::eri(&input.system);
 
     let core_hamiltonian = kinetic + nuclear;
