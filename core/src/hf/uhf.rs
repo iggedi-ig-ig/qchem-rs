@@ -1,29 +1,18 @@
+use molint::{
+    system::{Atom, MolecularSystem},
+    EriTensor,
+};
 use nalgebra::{DMatrix, DVector};
 
-use crate::{
-    atom::Atom,
-    basis::BasisFunction,
-    diis::Diis,
-    hf::mo::MolecularOrbitals,
-    integrals::{DefaultIntegrator, ElectronTensor, Integrator},
-};
+use crate::diis::Diis;
 
-use super::{utils, HartreeFockInput};
+use super::{utils, HartreeFockConfig};
 
 /// The output of a restricted hartree fock calculation
 #[derive(Debug)]
 #[non_exhaustive]
 #[allow(unused)]
 pub struct UnrestrictedHartreeFockOutput {
-    /// The spin up molecular orbitals that were found in the hartree fock calculation.
-    /// These are sorted by ascending order in energy.
-    pub(crate) orbitals_alpha: MolecularOrbitals,
-    /// The spin down molecular orbitals that were found in the hartree fock calculation.
-    /// These are sorted by ascending order in energy.
-    pub(crate) orbitals_beta: MolecularOrbitals,
-    /// the basis that was used in the hartree fock calculation. This is necessary
-    /// to be able to for example evaluate the molecular orbitals that were found
-    pub(crate) basis: Vec<BasisFunction>,
     /// the spin up orbital energies that were found in this hartree fock calculation, sorted in
     /// ascending order
     pub orbital_energies_alpha: Vec<f64>,
@@ -45,31 +34,25 @@ impl UnrestrictedHartreeFockOutput {
 }
 
 pub fn unrestricted_hartree_fock(
-    input: &HartreeFockInput,
+    system: &MolecularSystem,
+    config: &HartreeFockConfig,
 ) -> Option<UnrestrictedHartreeFockOutput> {
-    // exchangable integrator
-    let integrator = DefaultIntegrator::default();
+    let n_basis = system.n_basis();
 
-    // TODO: group integral terms by similar terms?
-    let basis = input.basis();
+    // TODO: completeness
+    let n_electrons: usize = system.atoms.iter().map(|a| a.ordinal).sum();
+    let n_alpha = n_electrons / 2;
+    let n_beta = n_electrons / 2;
 
-    let n_basis = basis.len();
-
-    let n_alpha = input.n_alpha();
-    let n_beta = input.n_beta();
-
-    let nuclear_repulsion = compute_nuclear_repulsion(&input.molecule.atoms);
+    let nuclear_repulsion = compute_nuclear_repulsion(&system.atoms);
     log::debug!("nulcear repulsion energy: {nuclear_repulsion}");
 
     // TODO: do we need to pre-calculate all of the integrals? I don't think, for example, all ERI integrals are actually used.
     //  if we could skip some of them, that would be a huge performance gain.
-    let overlap = compute_overlap_matrix(&basis, &integrator);
-    log::debug!("overlap matrix: {overlap:0.4}");
-    let kinetic = compute_kinetic_matrix(&basis, &integrator);
-    log::debug!("kinetic matrix: {kinetic:0.4}");
-    let nuclear = compute_nuclear_matrix(&basis, &input.molecule.atoms, &integrator);
-    log::debug!("nuclear matrix: {nuclear:0.4}");
-    let electron = ElectronTensor::from_basis(&basis, &integrator);
+    let overlap = DMatrix::from(molint::overlap(system));
+    let kinetic = DMatrix::from(molint::kinetic(system));
+    let nuclear = DMatrix::from(molint::nuclear(system));
+    let electron = molint::eri(system);
 
     let core_hamiltonian = kinetic + nuclear;
     let transform = compute_transformation_matrix(&overlap);
@@ -92,7 +75,7 @@ pub fn unrestricted_hartree_fock(
     // start of scf iteration
     let mut diis = [Diis::new(), Diis::new()];
 
-    for iteration in 0..=input.max_iterations {
+    for iteration in 0..=config.max_iterations {
         for spin in 0..=1 {
             // "main" density and "other" density
             let (density_one, density_two) = match spin {
@@ -151,10 +134,9 @@ pub fn unrestricted_hartree_fock(
 
         let density_rms = density_rms / 2.0;
         log::info!("iteration {iteration} - density rms {density_rms:03.3e}");
-        if density_rms / 2.0 < input.epsilon {
+        if density_rms / 2.0 < config.epsilon {
             let [orbital_energies_alpha, orbital_energies_beta] =
                 orbital_energies.map(|x| x.as_slice().to_vec());
-            let [coefficient_matrix_alpha, coefficient_matrix_beta] = coefficient_matrices;
             let [electronic_hamiltonian_alpha, electronic_hamiltonian_beta] =
                 electronic_hamiltonians;
 
@@ -169,9 +151,6 @@ pub fn unrestricted_hartree_fock(
             let electronic_energy = energy_alpha + energy_beta;
 
             return Some(UnrestrictedHartreeFockOutput {
-                orbitals_alpha: MolecularOrbitals::from_matrix(&coefficient_matrix_alpha),
-                orbitals_beta: MolecularOrbitals::from_matrix(&coefficient_matrix_beta),
-                basis,
                 orbital_energies_alpha,
                 orbital_energies_beta,
                 electronic_energy,
@@ -191,45 +170,11 @@ fn compute_nuclear_repulsion(atoms: &[Atom]) -> f64 {
     let mut potential = 0.0;
     for atom_a in 0..n_atoms {
         for atom_b in atom_a + 1..n_atoms {
-            potential += (atoms[atom_a].nuclear_charge() * atoms[atom_b].nuclear_charge()) as f64
+            potential += (atoms[atom_a].ordinal * atoms[atom_b].ordinal) as f64
                 / (atoms[atom_b].position - atoms[atom_a].position).norm()
         }
     }
     potential
-}
-
-pub fn compute_overlap_matrix(
-    basis: &[BasisFunction],
-    integrator: &impl Integrator<Item = BasisFunction>,
-) -> DMatrix<f64> {
-    utils::symmetric_matrix(basis.len(), |i, j| {
-        let overlap_ij = integrator.overlap((&basis[i], &basis[j]));
-        log::trace!("overlap ({i}{j}) = {overlap_ij}");
-        overlap_ij
-    })
-}
-
-pub fn compute_kinetic_matrix(
-    basis: &[BasisFunction],
-    integrator: &impl Integrator<Item = BasisFunction>,
-) -> DMatrix<f64> {
-    utils::symmetric_matrix(basis.len(), |i, j| {
-        let kinetic_ij = integrator.kinetic((&basis[i], &basis[j]));
-        log::trace!("kinetic ({i}{j}) = {kinetic_ij}");
-        kinetic_ij
-    })
-}
-
-pub fn compute_nuclear_matrix(
-    basis: &[BasisFunction],
-    nuclei: &[Atom],
-    integrator: &impl Integrator<Item = BasisFunction>,
-) -> DMatrix<f64> {
-    utils::symmetric_matrix(basis.len(), |i, j| {
-        let nuclear_ij = integrator.nuclear((&basis[i], &basis[j]), nuclei);
-        log::trace!("nuclear ({i}{j}) = {nuclear_ij}");
-        nuclear_ij
-    })
 }
 
 fn compute_transformation_matrix(overlap: &DMatrix<f64>) -> DMatrix<f64> {
@@ -263,7 +208,7 @@ fn compute_hückel_density_guess(
 fn compute_electronic_hamiltonian(
     density_one: &DMatrix<f64>,
     density_two: &DMatrix<f64>,
-    multi: &ElectronTensor,
+    multi: &EriTensor,
     n_basis: usize,
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(n_basis, |i, j| {

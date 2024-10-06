@@ -1,15 +1,11 @@
-use core::{
-    basis::BasisSet,
-    config::{ConfigBasisSet, ConfigMolecule},
-    hf::{
-        restricted_hartree_fock, unrestricted_hartree_fock, HartreeFockInput,
-        MolecularElectronConfig, RestrictedHartreeFockOutput, UnrestrictedHartreeFockOutput,
-    },
-    molecule::Molecule,
+use core::hf::{
+    restricted_hartree_fock, unrestricted_hartree_fock, HartreeFockConfig,
+    RestrictedHartreeFockOutput, UnrestrictedHartreeFockOutput,
 };
-use std::{error::Error, fs::File, path::PathBuf};
+use std::{error::Error, path::PathBuf};
 
 use clap::{ArgAction, Parser, Subcommand};
+use molint::{basis::BasisSet, system::MolecularSystem};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -77,19 +73,16 @@ fn main() -> Result<(), Box<dyn Error>> {
             max_iterations,
             epsilon,
         } => {
-            let basis_set: ConfigBasisSet = serde_json::from_reader(File::open(basis_set)?)?;
-            let molecule: ConfigMolecule = serde_json::from_reader(File::open(molecule)?)?;
+            let basis_set = BasisSet::load(basis_set)?;
+            let system = MolecularSystem::load(molecule, &basis_set)?;
 
-            let basis_set: BasisSet = basis_set.try_into()?;
-            let molecule: Molecule = molecule.into();
-
-            let hf_output = restricted_hartree_fock(&HartreeFockInput {
-                molecule: &molecule,
-                configuration: MolecularElectronConfig::ClosedShell,
-                basis_set: &basis_set,
-                max_iterations,
-                epsilon,
-            });
+            let hf_output = restricted_hartree_fock(
+                &system,
+                &HartreeFockConfig {
+                    max_iterations,
+                    epsilon,
+                },
+            );
 
             match hf_output {
                 Some(
@@ -110,43 +103,26 @@ fn main() -> Result<(), Box<dyn Error>> {
                 None => panic!("hartree fock did not converge"),
             }
         }
+
+        // TODO (completeness): charge and spin multiplicity
         QcCommand::UnrestrictedHartreeFock {
             basis_set,
             molecule,
-            charge,
-            spin_multiplicity,
+            charge: _,
+            spin_multiplicity: _,
             max_iterations,
             epsilon,
         } => {
-            let basis_set: ConfigBasisSet = serde_json::from_reader(File::open(basis_set)?)?;
-            let molecule: ConfigMolecule = serde_json::from_reader(File::open(molecule)?)?;
+            let basis_set = BasisSet::load(basis_set)?;
+            let system = MolecularSystem::load(molecule, &basis_set)?;
 
-            let basis_set: BasisSet = basis_set.try_into()?;
-            let molecule: Molecule = molecule.into();
-
-            let config = match (charge, spin_multiplicity) {
-                (0, 0) => MolecularElectronConfig::ClosedShell,
-                (0, _) => {
-                    return Err(
-                        "cannot have non-zero spin multiplicity for an uncharged molecule".into(),
-                    )
-                }
-                (_, 0) => {
-                    return Err("charged molecule cannot have spin multiplicity of zero".into())
-                }
-                (charge, multiplicity) => MolecularElectronConfig::OpenShell {
-                    molecular_charge: charge,
-                    spin_multiplicity: multiplicity.try_into().unwrap(),
+            let hf_output = unrestricted_hartree_fock(
+                &system,
+                &HartreeFockConfig {
+                    max_iterations,
+                    epsilon,
                 },
-            };
-
-            let hf_output = unrestricted_hartree_fock(&HartreeFockInput {
-                molecule: &molecule,
-                configuration: config,
-                basis_set: &basis_set,
-                max_iterations,
-                epsilon,
-            });
+            );
 
             match hf_output {
                 Some(

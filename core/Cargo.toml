@@ -11,6 +11,7 @@ serde_json = { workspace = true }
 itertools = { workspace = true }
 nalgebra = { workspace = true }
 smallvec = { workspace = true }
+molint = { workspace = true }
 serde = { workspace = true }
 log = { workspace = true }
 boys = "0.1.0"
@@ -18,11 +19,3 @@ boys = "0.1.0"
 [features]
 rayon = ["dep:rayon"]
 
-[dev-dependencies]
-rand = { workspace = true }
-criterion = "0.5.1"
-approx = "0.5.1"
-
-[[bench]]
-name = "integrals"
-harness = false
