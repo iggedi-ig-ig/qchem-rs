@@ -2,7 +2,7 @@ use core::hf::{
     restricted_hartree_fock, unrestricted_hartree_fock, HartreeFockConfig,
     RestrictedHartreeFockOutput, UnrestrictedHartreeFockOutput,
 };
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, path::PathBuf, time::Instant};
 
 use clap::{ArgAction, Parser, Subcommand};
 use molint::{basis::BasisSet, system::MolecularSystem};
@@ -76,6 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let basis_set = BasisSet::load(basis_set)?;
             let system = MolecularSystem::load(molecule, &basis_set)?;
 
+            let start = Instant::now();
             let hf_output = restricted_hartree_fock(
                 &system,
                 &HartreeFockConfig {
@@ -94,7 +95,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                         ..
                     },
                 ) => {
-                    println!("hartree fock converged after {iterations} iterations");
+                    println!(
+                        "hartree fock converged after {iterations} iterations and {:0.2?}",
+                        start.elapsed()
+                    );
                     println!("electronic energy: {electronic_energy:3.3}");
                     println!("nuclear repulsion energy: {nuclear_repulsion:3.3}");
                     println!("hartree fock energy: {:3.3}", output.total_energy());
@@ -116,6 +120,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let basis_set = BasisSet::load(basis_set)?;
             let system = MolecularSystem::load(molecule, &basis_set)?;
 
+            let start = Instant::now();
             let hf_output = unrestricted_hartree_fock(
                 &system,
                 &HartreeFockConfig {
@@ -135,12 +140,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                         ..
                     },
                 ) => {
-                    println!("hartree fock converged after {iterations} iterations");
+                    println!(
+                        "hartree fock converged after {iterations} iterations and {:?}",
+                        start.elapsed()
+                    );
                     println!("electronic energy: {electronic_energy:3.3}");
                     println!("nuclear repulsion energy: {nuclear_repulsion:3.3}");
                     println!("hartree fock energy: {:3.3}", output.total_energy());
-                    println!("orbital energies spin up:   {orbital_energies_alpha:3.3?}");
-                    println!("orbital energies spin down: {orbital_energies_beta:3.3?}");
+                    println!("orbital energies alpha spin:   {orbital_energies_alpha:3.3?}");
+                    println!("orbital energies beta spin: {orbital_energies_beta:3.3?}");
                 }
                 None => panic!("hartree fock did not converge"),
             }
