@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use molint::system::{Atom, MolecularSystem};
 use nalgebra::DMatrix;
 
@@ -39,7 +41,9 @@ pub fn restricted_hartree_fock(
     let overlap = DMatrix::from(molint::overlap(system));
     let kinetic = DMatrix::from(molint::kinetic(system));
     let nuclear = DMatrix::from(molint::nuclear(system));
+    let start = Instant::now();
     let electron = molint::eri(system);
+    println!("ERI computation took {:?}", start.elapsed());
 
     let core_hamiltonian = kinetic + nuclear;
     let transform = compute_transformation_matrix(&overlap);
@@ -52,13 +56,13 @@ pub fn restricted_hartree_fock(
     );
 
     let mut electron_terms = vec![0.0; n_basis.pow(4)];
-    for (j, i, x, y) in itertools::iproduct!(0..n_basis, 0..n_basis, 0..n_basis, 0..n_basis) {
-        electron_terms[j * n_basis.pow(3) + i * n_basis.pow(2) + y * n_basis + x] =
-            electron[(i, j, x, y)] - 0.5 * electron[(i, x, j, y)];
+    for (i, j, k, l) in itertools::iproduct!(0..n_basis, 0..n_basis, 0..n_basis, 0..n_basis) {
+        electron_terms[i * n_basis.pow(3) + j * n_basis.pow(2) + k * n_basis + l] =
+            electron[(i, j, k, l)] - 0.5 * electron[(i, k, j, l)];
     }
 
     // start of scf iteration
-    let mut diis = Diis::new();
+    let mut diis = Diis::new(4, 6);
     for iteration in 0..=config.max_iterations {
         let electronic_hamiltonian =
             compute_electronic_hamiltonian(&density, &electron_terms, n_basis);
@@ -152,10 +156,10 @@ fn compute_electronic_hamiltonian(
 ) -> DMatrix<f64> {
     utils::symmetric_matrix(n_basis, |i, j| {
         let mut sum = 0.0;
-        for y in 0..n_basis {
-            for x in 0..n_basis {
-                sum += density[(x, y)]
-                    * electron_terms[j * n_basis.pow(3) + i * n_basis.pow(2) + y * n_basis + x];
+        for k in 0..n_basis {
+            for l in 0..n_basis {
+                sum += density[(k, l)]
+                    * electron_terms[i * n_basis.pow(3) + j * n_basis.pow(2) + k * n_basis + l];
             }
         }
         sum

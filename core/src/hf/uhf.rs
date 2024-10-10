@@ -73,7 +73,9 @@ pub fn unrestricted_hartree_fock(
     let mut orbital_energies = [DVector::zeros(n_basis), DVector::zeros(n_basis)];
 
     // start of scf iteration
-    let mut diis = [Diis::new(), Diis::new()];
+    let min_size = 2;
+    let max_size = 8;
+    let mut diis = [Diis::new(min_size, max_size), Diis::new(min_size, max_size)];
 
     for iteration in 0..=config.max_iterations {
         for spin in 0..=1 {
