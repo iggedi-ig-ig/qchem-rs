@@ -1,6 +1,6 @@
 use molint::{
+    storage::EriTensor,
     system::{Atom, MolecularSystem},
-    EriTensor,
 };
 use nalgebra::{DMatrix, DVector};
 
